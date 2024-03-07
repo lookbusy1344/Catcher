@@ -136,7 +136,7 @@ public static class Catcher
 }
 
 /// <summary>
-/// Unit type, used for void functions
+/// Unit type, used for void functions in the form Result(Unit)
 /// </summary>
 public readonly record struct Unit
 {

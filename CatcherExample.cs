@@ -28,7 +28,7 @@ internal static class CatcherExample
 	public static async Task GoAsync()
 	{
 		Console.WriteLine("First count:");
-		var words = await CountWordsInFileAsync(@"C:\dev\wordcount.txt");
+		var words = await CountWordsInFileAsync(Program.WordsFile);
 
 		words.Switch(
 			success: count => Console.WriteLine($"File has {count} words"),
@@ -36,7 +36,7 @@ internal static class CatcherExample
 		);
 
 		Console.WriteLine("\r\nSecond count:");
-		var words2 = await CountWordsInFile2Async(@"C:\dev\wordcount.txt");
+		var words2 = await CountWordsInFile2Async(Program.WordsFile);
 
 		words2.Switch(
 			success: count => Console.WriteLine($"File has {count} words"),
@@ -47,46 +47,46 @@ internal static class CatcherExample
 	public static void Go()
 	{
 		var s = "hello";
-		var nv = ResultBuilder.FromNullable(s);
+		var stringResult = ResultBuilder.FromNullable(s);
 		s = null;
-		nv = ResultBuilder.FromNullable(s);
+		stringResult = ResultBuilder.FromNullable(s);
 
-		var (str, err, issuccess) = nv;
+		// de-structure the result
+		var (str, err, issuccess) = stringResult;
 
 		int? i = null;
-		var nv2 = ResultBuilder.FromNullable(i);
+		var intResult = ResultBuilder.FromNullable(i);
 		i = 1;
-		nv2 = ResultBuilder.FromNullable(i);
+		intResult = ResultBuilder.FromNullable(i);
 
 		// ======
 
 		// turn a Result<string?> into a Result<string>
-		var x1 = Catcher.Try(() => (string?)"hello");
-		var x2 = ResultBuilder.RemoveNullable(x1);
+		var stringResult1 = Catcher.Try(() => (string?)"hello");
+		var stringResult2 = ResultBuilder.RemoveNullable(stringResult1);
 
 		// turn a Result<int?> into a Result<int>
-		var x3 = Catcher.Try(() => (int?)3);
-		var x4 = ResultBuilder.RemoveNullable(x3);
+		var intResult1 = Catcher.Try(() => (int?)3);
+		var intResult2 = ResultBuilder.RemoveNullable(intResult1);
 
 		// now turn a Result<int> into a Result<decimal> using Pipe
-		var next = x4.Pipe(i =>
+		var decimalResult = intResult2.Pipe(i =>
 			i.IsSuccess ? ResultBuilder.Success((decimal)i.ResultValue) : ResultBuilder.Failure<decimal>(i.Error));
 
 		// ======
 
 		// checks for nullable types, references and value
-		var null1 = Catcher.Try(() =>
+		var oddResult = Catcher.Try(() =>
 			(DateTime.Now.Ticks % 2 == 0) ? "Hello" : null
 		);
-		var null2 = null1.Then(s => s?.Length);
-		var null3 = null2.Transform(
+		var lengthResult = oddResult.Then(s => s?.Length);
+		var messageResult = lengthResult.Transform(
 			success: i => i == null ? "" : "Yikes!",
-			//success: i => i == null ? null : "Yikes!",
 			failure: _ => "nothing"
 		);
 
-		var xx = null3.Unwrap();
-		var l = xx.Length;
+		var unwrapped = messageResult.Unwrap();
+		var l = unwrapped.Length;
 
 		//======
 
@@ -94,7 +94,7 @@ internal static class CatcherExample
 		{
 			// this returns long, and starts a chain with Result<long>
 			Console.WriteLine("Step 1");
-			var file = new FileInfo(Program.DefaultDbFile);
+			var file = new FileInfo(Program.FileName);
 			if (!file.Exists)
 				throw new FileNotFoundException($"Database file \"{file.FullName}\" not found.");
 
@@ -134,24 +134,25 @@ internal static class CatcherExample
 				return ResultBuilder.Failure<string>(new Exception("Step 4 fails"));
 			});
 
-		// Match the Result<string> into an int
+		// Match the Result<string> into an int. If failure, return -1
 		var matched = work.Match(
-			success: s => int.Parse(s!),
+			success: int.Parse,
 			failure: _ => -1);
 
-		// Transform the Result<string> into an Result<int>
+		// Transform the Result<string> into an Result<int>. If failure, return Success(-1)
 		var transform1 = work.Transform(
-			success: s => ResultBuilder.Success(int.Parse(s!)),
+			success: s => ResultBuilder.Success(int.Parse(s)),
 			failure: _ => ResultBuilder.Success(-1));
 
 		// Transform the Result<string> into an Result<int>
+		// unlike Match, this will return a Result<int> not an int
 		var transform2 = work.Transform(
-			success: s => int.Parse(s!),
+			success: int.Parse,
 			failure: _ => -1);
 
-		// transforming into a Result<int?>
+		// transforming from Result<string> to Result<int?> 
 		var transform3 = work.Transform(
-			success: s => (int?)int.Parse(s!),
+			success: s => (int?)int.Parse(s),
 			failure: _ => null);
 
 		// Unwrap the result, or fail-fast

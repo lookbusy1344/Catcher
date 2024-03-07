@@ -30,7 +30,7 @@ public static class ResultBuilder
 	public static readonly Result<Unit> SuccessUnit = Success(Unit.Value);
 
 	/// <summary>
-	/// Turn a nullable reference type into a Result(T)
+	/// Turn a nullable reference type from T? into a Result(T)
 	/// Where NULL is an error
 	/// Eg string? -> Result(string)
 	/// </summary>
@@ -38,7 +38,7 @@ public static class ResultBuilder
 		value == null ? Failure<T>(new ArgumentNullException(nameof(value))) : Success(value);
 
 	/// <summary>
-	/// Turn a nullable value type into a Result(T)
+	/// Turn a nullable value type from T? into a Result(T)
 	/// Where NULL is an error
 	/// Eg int? -> Result(int)
 	/// </summary>

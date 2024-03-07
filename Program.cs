@@ -2,7 +2,10 @@
 
 internal static class Program
 {
-	public static string DefaultDbFile = "CatcherExample.cs";
+	public const string FileName = "CatcherExample.cs";
+	public const string WordsFile = @"C:\dev\wordcount.txt";
+
+#pragma warning disable IDE0022 // Use expression body for method
 
 	private static async Task Main()
 	{

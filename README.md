@@ -1,6 +1,6 @@
 # Catcher - a library for helping with exception free C#
 
-First it's important to say, **stick with Exceptions they are idiomatic and far better than other forms of error handling** in C#. This is not Rust!
+First it's important to say, **stick with Exceptions, they are idiomatic and far better than other forms of error handling** in C#. This is not Rust!
 
 To quote *Framework Design Guidelines* page 250:
 
@@ -35,7 +35,7 @@ When no return value is expected, we use `Result<Unit>` which contains no payloa
 |---|---|
 |`int GetIntOrThrow()` | `Result<int> GetIntOrError()` |
 |`void DoWorkOrThrow()` | `Result<Unit> DoWorkOrError()` |
-|`Task<int> GetIntAsync()` | `Result<Task<int>> GetIntAsync()` |
+|`Task<int> GetIntAsync()` | `Task<Result<int>> GetIntAsync()` |
 |`Task DoWorkAsync()` | `Task<Result<Unit>> DoWorkAsync()` |
 
 ## How to use - starting a chain
@@ -62,7 +62,7 @@ New failured can be signalled by throwing in the lamdba.
 
 ```
 Result<string> str = result.Then(i => i.ToString());
-Result<string> str = result.Then(i => throw new Exception("oh no!"));
+Result<string> str = result.Then<string>(i => throw new Exception("oh no!"));
 ```
 
 ### Transform()
@@ -74,7 +74,7 @@ New failured can be signalled by throwing in the lamdba
 ```
 Result<string> str = result.Transform(
 	success: i => i.ToString(),
-	failure: ex => ex.Message
+	failure: ex => ex.Message		// Result<int>.Error becomes Result<string>.Success containing the error message
 );
 ```
 
@@ -106,7 +106,7 @@ int value = result.Unwrap();
 `Match()` Unwraps the result, or returns a default value if there is an error
 
 ```
-int value = result.Match(
+int value = stringresult.Match(
 	success: int.Parse,
 	failure: _ => -1);
 ```

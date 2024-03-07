@@ -1,5 +1,4 @@
-# Catcher
-## A library for helping with exception free C#
+# Catcher - a library for helping with exception free C#
 
 First it's important to say, **stick with Exceptions they are idiomatic and far better than other forms of error handling** in C#. This is not Rust!
 
@@ -39,50 +38,84 @@ When no return value is expected, we use `Result<Unit>` which contains no payloa
 |`Task<int> GetIntAsync()` | `Result<Task<int>> GetIntAsync()` |
 |`Task DoWorkAsync()` | `Task<Result<Unit>> DoWorkAsync()` |
 
-## How to use
+## How to use - starting a chain
 
-Start your call in `Catcher.Try()` or `Catcher.TryAsync()`
-
-```
-Result<int> result = Catcher.Try(() => GetIntOrThrow());
-Task<Result<int>> result = Catcher.TryAsync(() => GetIntAsync());
-```
-
-Then chain `.Then()`, `.Transform()` and `.Pipe()` calls to transform the result. 
+Start your call with `Catcher.Try()` or `Catcher.TryAsync()`
 
 ```
-// This Then() turns a Result<int> into a Result<string> when it is not in error
-// It is bypassed if the result is in error
-// Failured can be signalled by throwing in the lamdba
+Result<int> result = Catcher.Try(() => GetIntOrThrow());	// int result
+Result<Unit> emptyresult = Catcher.Try(() => DoWorkOrThrow());	// void result
+
+Task<Result<int>> awaitableresult = Catcher.TryAsync(() => GetIntAsync());	// async Task<int> result
+Task<Result<Unit>> awaitableresult2 = Catcher.TryAsync(() => DoWorkAsync());	// async Task result
+```
+
+## Chaining calls
+
+Then chain `.Then()`, `.Transform()` and `.Pipe()` calls to transform the result. These all turn a `Result<T>` into a `Result<U>` in different ways.
+
+### Then()
+
+This `Then()` example turns a `Result<int>` into a `Result<string>`. The lambda is bypassed entirely if the result is already in error, and the error transferred to the destination.
+
+New failured can be signalled by throwing in the lamdba.
+
+```
 Result<string> str = result.Then(i => i.ToString());
 Result<string> str = result.Then(i => throw new Exception("oh no!"));
+```
 
-// This Transform() turns a Result<int> into a Result<string>, using different lambdas for success and failure
-// Failured can be signalled by throwing in the lamdba
+### Transform()
+
+This `Transform()` example turns a `Result<int>` into a `Result<string>`, using different lambdas for success and failure.
+
+New failured can be signalled by throwing in the lamdba
+
+```
 Result<string> str = result.Transform(
 	success: i => i.ToString(),
 	failure: ex => ex.Message
 );
+```
 
-// This Pipe() turns a Result<int> into a Result<decimal>
-// The full Result<int> is passed to the lambda, which returns a full Result<decimal>
-// Failured can be signalled **without** throwing, so this is particularly useful for chaining
+### Pipe()
+
+This `Pipe()` example turns a `Result<int>` into a `Result<decimal>`. Here the **full** `Result<int>` is passed to the lambda, which returns a full `Result<decimal>`.
+
+Failured can be signalled **without** throwing, so this is particularly useful when writing exception-free code
+
+```
 Result<decimal> dec = result.Pipe(ires =>
 	ires.IsSuccess ? ResultBuilder.Success((decimal)ires.ResultValue) : ResultBuilder.Failure<decimal>(ires.Error));
 ```
 
-Finally call `.Unwrap()` to get the result, `.Match()` or `.Switch()` to handle the result.
+## Ending a chain
+
+Finally call `.Unwrap()`, `.Match()` or `.Switch()` to handle the result.
+
+### Unwrap()
+
+`Unwrap()` fails-fast if there is an error
 
 ```
-// Unwrap() fails-fast if there is an error
 int value = result.Unwrap();
+```
 
-// Match() Unwraps the result, or returns a default value if there is an error
+### Match()
+
+`Match()` Unwraps the result, or returns a default value if there is an error
+
+```
 int value = result.Match(
 	success: int.Parse,
 	failure: _ => -1);
+```
 
-// Switch() calls actions according to the result
+### Switch()
+
+`Switch()` calls actions according to the result, success or failure
+
+```
 result.Switch(
 	success: i => Console.WriteLine(i),
 	failure: ex => Console.WriteLine($"ERROR: {ex.Message}")
@@ -90,17 +123,16 @@ result.Switch(
 
 ```
 
-## Examples
+## More examples
 
 Some more complex example are below. Calls can be chained:
 
 ```
-Result<int> result = Catcher.Try(() => step1).Then(a => step2).Then(b => 1).Unwrap();
-```
+int result = Catcher.Try(() => step1)
+	.Then(a => step2)
+	.Then(b => 1)
+	.Unwrap();
 
-Here is a more detailed example:
-
-```
 // returns Result<string?>
 Result<string?> valuea = Catcher.Try(() =>
 	(DateTime.Now.Ticks % 2 == 0) ? "Even" : null   // even or null

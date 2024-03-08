@@ -88,6 +88,29 @@ public readonly struct Result<T>(T result, Exception? exception)
 	}
 
 	/// <summary>
+	/// Turn success or failure into a common type R. Any exceptions in the lambdas result in the default value
+	/// </summary>
+	public R MatchDefault<R>(Func<T, R> success, Func<Exception, R> failure)
+	{
+		try
+		{
+			// these will indirectly call a fail fast if null
+			ArgumentNullException.ThrowIfNull(success);
+			ArgumentNullException.ThrowIfNull(failure);
+
+			if (IsSuccess)
+				return success(ResultValue);
+			else
+				return failure(Error);
+		}
+		catch
+		{
+			// any problems cause the default value to be returned
+			return default!;
+		}
+	}
+
+	/// <summary>
 	/// Transform success or failure into a common type Result(R) for further chaining. Functions return R to the chain
 	/// </summary>
 	public Result<R> Transform<R>(Func<T, R> success, Func<Exception, R> failure)

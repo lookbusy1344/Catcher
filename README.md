@@ -108,6 +108,7 @@ Result<decimal> dec = result.Pipe(ires =>
 ## Ending a chain
 
 Finally call `.Unwrap()`, `.Match()` or `.Switch()` to handle the result. These all fail-fast if something goes wrong.
+`.MatchDefault()` is also available, which returns a default value if Result cannot be unwrapped.
 
 ### Unwrap()
 
@@ -117,13 +118,21 @@ Finally call `.Unwrap()`, `.Match()` or `.Switch()` to handle the result. These 
 int value = result.Unwrap();
 ```
 
-### Match()
+### Match() and MatchDefault()
 
-`Match()` Unwraps the result, or returns a default value if there is an error
+`Match()` unwraps the success result, or converts any error value. Any exceptions thrown in the lambdas cause a fail-fast.
 
 ```
 int value = stringresult.Match(
-	success: int.Parse,
+	success: int.Parse,				// if this throws, we get a fail-fast
+	failure: _ => -1);
+```
+
+`MatchDefault()` unwraps the success result, or converts any error value. Any exceptions thrown in the lambdas cause default value to be returned.
+
+```
+int value = stringresult.MatchDefault(
+	success: int.Parse,				// if this throws, we get a default value 0
 	failure: _ => -1);
 ```
 

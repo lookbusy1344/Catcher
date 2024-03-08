@@ -62,6 +62,25 @@ public static class Catcher
 	}
 
 	/// <summary>
+	/// Call this function which directly returns Result(R). Throwing is not necessary to signal failure
+	/// </summary>
+	/// <typeparam name="R">Inner Result type</typeparam>
+	/// <param name="func">Function which returns type Result(R) directly</param>
+	public static Result<R> Call<R>(Func<Result<R>> func)
+	{
+		if (func == null) return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+
+		try
+		{
+			return func();
+		}
+		catch (Exception ex)
+		{
+			return ResultBuilder.Failure<R>(ex);
+		}
+	}
+
+	/// <summary>
 	/// Try this function, and return a Result(R) for success or failure
 	/// </summary>
 	/// <typeparam name="T">Input type of function</typeparam>
@@ -127,6 +146,23 @@ public static class Catcher
 		try
 		{
 			return ResultBuilder.Success(await func(param1)); // all returns are wrapped in a Task
+		}
+		catch (Exception ex)
+		{
+			return ResultBuilder.Failure<R>(ex);
+		}
+	}
+
+	/// <summary>
+	/// Call this async function (which returns a Task(Result(R))) directly. Throwing is not necessary to signal failure
+	/// </summary>
+	public static async Task<Result<R>> CallAsync<R>(Func<Task<Result<R>>> func)
+	{
+		if (func == null) return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+
+		try
+		{
+			return await func();
 		}
 		catch (Exception ex)
 		{

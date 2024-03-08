@@ -40,7 +40,11 @@ When no return value is expected, we use `Result<Unit>` which contains no payloa
 
 ## How to use - starting a chain
 
-Start your call with `Catcher.Try()` or `Catcher.TryAsync()`
+Start your call with `Catcher.Try()`,  `Catcher.TryAsync()`, `Catcher.Call()` or `Catcher.CallAsync()`.
+
+### Try() and TryAsync()
+
+The `Try()` methods call the lambda which returns `T`. The only way to signal an error is to throw an exception. The result is a `Result<T>`.
 
 ```
 Result<int> result = Catcher.Try(() => GetIntOrThrow());	// int result
@@ -48,6 +52,18 @@ Result<Unit> emptyresult = Catcher.Try(() => DoWorkOrThrow());	// void result
 
 Task<Result<int>> awaitableresult = Catcher.TryAsync(() => GetIntAsync());	// async Task<int> result
 Task<Result<Unit>> awaitableresult2 = Catcher.TryAsync(() => DoWorkAsync());	// async Task result
+```
+
+### Call() and CallAsync()
+
+The `Call()` methods call the lambda which returns `Result<T>` directly. Errors can be signalled without throwing by using `ResultBuilder.Failure<T>()`. Any thrown exceptions behave like `Try()`, they are caught and returned.
+
+```
+// signal success
+Result<int> result = Catcher.Call(() => ResultBuilder.Success(1));
+
+// signal an error without throwing
+Result<int> result = Catcher.Call(() => ResultBuilder.Failure<int>(err));
 ```
 
 ## Chaining calls
@@ -91,11 +107,11 @@ Result<decimal> dec = result.Pipe(ires =>
 
 ## Ending a chain
 
-Finally call `.Unwrap()`, `.Match()` or `.Switch()` to handle the result.
+Finally call `.Unwrap()`, `.Match()` or `.Switch()` to handle the result. These all fail-fast if something goes wrong.
 
 ### Unwrap()
 
-`Unwrap()` fails-fast if there is an error
+`Unwrap()` fails-fast if the result is in error
 
 ```
 int value = result.Unwrap();

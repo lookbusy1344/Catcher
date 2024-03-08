@@ -58,7 +58,7 @@ Then chain `.Then()`, `.Transform()` and `.Pipe()` calls to transform the result
 
 This `Then()` example turns a `Result<int>` into a `Result<string>`. The lambda is bypassed entirely if the result is already in error, and the error transferred to the destination.
 
-New failured can be signalled by throwing in the lamdba.
+New failures can be signalled by throwing in the lamdba.
 
 ```
 Result<string> str = result.Then(i => i.ToString());
@@ -69,7 +69,7 @@ Result<string> str = result.Then<string>(i => throw new Exception("oh no!"));
 
 This `Transform()` example turns a `Result<int>` into a `Result<string>`, using different lambdas for success and failure.
 
-New failured can be signalled by throwing in the lamdba
+New failures can be signalled by throwing in the lamdba
 
 ```
 Result<string> str = result.Transform(
@@ -82,7 +82,7 @@ Result<string> str = result.Transform(
 
 This `Pipe()` example turns a `Result<int>` into a `Result<decimal>`. Here the **full** `Result<int>` is passed to the lambda, which returns a full `Result<decimal>`.
 
-Failured can be signalled **without** throwing, so this is particularly useful when writing exception-free code
+Failures can be signalled **without** throwing, so this is particularly useful when writing exception-free code
 
 ```
 Result<decimal> dec = result.Pipe(ires =>

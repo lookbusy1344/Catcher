@@ -16,8 +16,7 @@ public static class ResultBuilder
 	public static Result<T> Failure<T>(Exception exception)
 	{
 		// not allowed to set failure exception to null
-		if (exception == null)
-		{
+		if (exception == null) {
 			Environment.FailFast("Setting Result failure with a null exception", exception);
 			throw new ArgumentNullException(nameof(exception)); // unreachable
 		}
@@ -52,8 +51,14 @@ public static class ResultBuilder
 	public static Result<T> RemoveNullable<T>(Result<T?> result) where T : class
 	{
 		// I'd prefer these in Result<T>, but cant because of the generic constraint
-		if (result.IsError) return Failure<T>(result.Error!);
-		if (result.ResultValue == null) return Failure<T>(new ArgumentNullException(nameof(result)));
+		if (result.IsError) {
+			return Failure<T>(result.Error!);
+		}
+
+		if (result.ResultValue == null) {
+			return Failure<T>(new ArgumentNullException(nameof(result)));
+		}
+
 		return Success(result.ResultValue);
 	}
 
@@ -64,8 +69,14 @@ public static class ResultBuilder
 	public static Result<T> RemoveNullable<T>(Result<T?> result) where T : struct
 	{
 		// I'd prefer these in Result<T>, but cant because of the generic constraint
-		if (result.IsError) return Failure<T>(result.Error!);
-		if (!result.ResultValue.HasValue) return Failure<T>(new ArgumentNullException(nameof(result)));
+		if (result.IsError) {
+			return Failure<T>(result.Error!);
+		}
+
+		if (!result.ResultValue.HasValue) {
+			return Failure<T>(new ArgumentNullException(nameof(result)));
+		}
+
 		return Success(result.ResultValue.Value);
 	}
 }

@@ -19,11 +19,10 @@ internal static class CatcherExample
 	public static async Task<Result<int>> CountWordsInFile2Async(string fname) =>
 		(await Catcher.TryAsync(() => File.ReadAllLinesAsync(fname)))
 			.Then(contents => contents.Sum(line => line.Split(' ').Length))
-			.Then(i => i switch
-				{
-					> 1000 => ResultBuilder.Success(i),
-					_ => ResultBuilder.Failure<int>(new Exception($"Only {i} words found, this is an error"))
-				});
+			.Then(i => i switch {
+				> 1000 => ResultBuilder.Success(i),
+				_ => ResultBuilder.Failure<int>(new Exception($"Only {i} words found, this is an error"))
+			});
 
 	public static async Task GoAsync()
 	{
@@ -90,45 +89,42 @@ internal static class CatcherExample
 
 		//======
 
-		var work = Catcher.Try(() =>
-		{
+		var work = Catcher.Try(() => {
 			// this returns long, and starts a chain with Result<long>
 			Console.WriteLine("Step 1");
 			var file = new FileInfo(Program.FileName);
-			if (!file.Exists)
+			if (!file.Exists) {
 				throw new FileNotFoundException($"Database file \"{file.FullName}\" not found.");
+			}
 
 			return file.Length;
 		})
-			.Then(length =>
-				{
-					// chaining long -> Result<long>
-					Console.WriteLine("Step 2");
-					Console.WriteLine($"File size is {length}");
-					if (length < 1000)
-						return ResultBuilder.Failure<long>(new Exception("File too small"));
-					else
-						return ResultBuilder.Success(length + 1);
-				})
-			.Then(length =>
-				{
-					// chaining long -> Result<string>
-					Console.WriteLine("Step 3");
-					return length.ToString();
-				})
-			.Then(_ =>
-				{
-					// chaining disregard -> Result<string>
-					Console.WriteLine("Step 4");
-					return ResultBuilder.Success("Hello");
-				})
+			.Then(length => {
+				// chaining long -> Result<long>
+				Console.WriteLine("Step 2");
+				Console.WriteLine($"File size is {length}");
+				if (length < 1000) {
+					return ResultBuilder.Failure<long>(new Exception("File too small"));
+				} else {
+					return ResultBuilder.Success(length + 1);
+				}
+			})
+			.Then(length => {
+				// chaining long -> Result<string>
+				Console.WriteLine("Step 3");
+				return length.ToString();
+			})
+			.Then(_ => {
+				// chaining disregard -> Result<string>
+				Console.WriteLine("Step 4");
+				return ResultBuilder.Success("Hello");
+			})
 			.OnError(
 				// if there is an error in the chain, turn it into a success string
 				ex => $"ERROR: {ex.Message}"
 				)
 			.Then(s => (int?)int.Parse(s!))
-			.Then(i =>
-			{
+			.Then(i => {
 				// always return a failure
 				Console.WriteLine($"Step 5 with {i}");
 				return ResultBuilder.Failure<string>(new Exception("Step 4 fails"));

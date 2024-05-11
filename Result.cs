@@ -44,19 +44,18 @@ public readonly struct Result<T>(T result, Exception? exception)
 	/// </summary>
 	public void Switch(Action<T> success, Action<Exception> failure)
 	{
-		try
-		{
+		try {
 			// these will indirectly call a fail fast if null
 			ArgumentNullException.ThrowIfNull(success);
 			ArgumentNullException.ThrowIfNull(failure);
 
-			if (IsSuccess)
+			if (IsSuccess) {
 				success(ResultValue);
-			else
+			} else {
 				failure(Error);
+			}
 		}
-		catch (Exception ex)
-		{
+		catch (Exception ex) {
 			// an exception in the switch function is a fatal error
 			Environment.FailFast("An unexpected error occurred in Switch", ex);
 			throw;  // unreachable
@@ -68,19 +67,18 @@ public readonly struct Result<T>(T result, Exception? exception)
 	/// </summary>
 	public R Match<R>(Func<T, R> success, Func<Exception, R> failure)
 	{
-		try
-		{
+		try {
 			// these will indirectly call a fail fast if null
 			ArgumentNullException.ThrowIfNull(success);
 			ArgumentNullException.ThrowIfNull(failure);
 
-			if (IsSuccess)
+			if (IsSuccess) {
 				return success(ResultValue);
-			else
+			} else {
 				return failure(Error);
+			}
 		}
-		catch (Exception ex)
-		{
+		catch (Exception ex) {
 			// an exception in the match function is a fatal error
 			Environment.FailFast("An unexpected error occurred in Match", ex);
 			throw;  // unreachable
@@ -92,19 +90,18 @@ public readonly struct Result<T>(T result, Exception? exception)
 	/// </summary>
 	public R MatchDefault<R>(Func<T, R> success, Func<Exception, R> failure)
 	{
-		try
-		{
+		try {
 			// these will indirectly call a fail fast if null
 			ArgumentNullException.ThrowIfNull(success);
 			ArgumentNullException.ThrowIfNull(failure);
 
-			if (IsSuccess)
+			if (IsSuccess) {
 				return success(ResultValue);
-			else
+			} else {
 				return failure(Error);
+			}
 		}
-		catch
-		{
+		catch {
 			// any problems cause the default value to be returned
 			return default!;
 		}
@@ -115,19 +112,18 @@ public readonly struct Result<T>(T result, Exception? exception)
 	/// </summary>
 	public Result<R> Transform<R>(Func<T, R> success, Func<Exception, R> failure)
 	{
-		try
-		{
+		try {
 			// these will indirectly call a fail fast if null
 			ArgumentNullException.ThrowIfNull(success);
 			ArgumentNullException.ThrowIfNull(failure);
 
-			if (IsSuccess)
+			if (IsSuccess) {
 				return Catcher.Try(success, ResultValue);
-			else
+			} else {
 				return Catcher.Try(failure, Error);
+			}
 		}
-		catch (Exception ex)
-		{
+		catch (Exception ex) {
 			// an exception in the transform function is a fatal error
 			Environment.FailFast("An unexpected error occurred in Transform", ex);
 			throw;  // unreachable
@@ -140,27 +136,24 @@ public readonly struct Result<T>(T result, Exception? exception)
 	/// </summary>
 	public Result<R> Transform<R>(Func<T, Result<R>> success, Func<Exception, Result<R>> failure)
 	{
-		try
-		{
+		try {
 			// these will indirectly call a fail fast if null
 			ArgumentNullException.ThrowIfNull(success);
 			ArgumentNullException.ThrowIfNull(failure);
 
-			try
-			{
-				if (IsSuccess)
+			try {
+				if (IsSuccess) {
 					return success(ResultValue);
-				else
+				} else {
 					return failure(Error);
+				}
 			}
-			catch (Exception ex)
-			{
+			catch (Exception ex) {
 				// the failure handler threw an exception, so return it as a failure Result<R>
 				return ResultBuilder.Failure<R>(ex);
 			}
 		}
-		catch (Exception ex)
-		{
+		catch (Exception ex) {
 			// an exception in the transform function is a fatal error
 			Environment.FailFast("An unexpected error occurred in Transform", ex);
 			throw;  // unreachable
@@ -173,8 +166,13 @@ public readonly struct Result<T>(T result, Exception? exception)
 	public Result<Unit> Then(Action<T> action)
 	{
 		// if we receive a failure, just return it
-		if (IsError) return ResultBuilder.Failure<Unit>(Error);
-		if (action == null) return ResultBuilder.Failure<Unit>(new ArgumentNullException(nameof(action)));
+		if (IsError) {
+			return ResultBuilder.Failure<Unit>(Error);
+		}
+
+		if (action == null) {
+			return ResultBuilder.Failure<Unit>(new ArgumentNullException(nameof(action)));
+		}
 
 		return Catcher.Try(action, ResultValue);
 	}
@@ -185,8 +183,13 @@ public readonly struct Result<T>(T result, Exception? exception)
 	public Result<R> Then<R>(Func<T, R> func)
 	{
 		// if we receive a failure, just return it
-		if (IsError) return ResultBuilder.Failure<R>(Error);
-		if (func == null) return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+		if (IsError) {
+			return ResultBuilder.Failure<R>(Error);
+		}
+
+		if (func == null) {
+			return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+		}
 
 		return Catcher.Try(func, ResultValue);
 	}
@@ -197,16 +200,19 @@ public readonly struct Result<T>(T result, Exception? exception)
 	public Result<R> Then<R>(Func<T, Result<R>> func)
 	{
 		// if we receive a failure, just return it
-		if (IsError) return ResultBuilder.Failure<R>(Error);
-		if (func == null) return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+		if (IsError) {
+			return ResultBuilder.Failure<R>(Error);
+		}
 
-		try
-		{
+		if (func == null) {
+			return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+		}
+
+		try {
 			// the worker function returns a Result<R> directly
 			return func(ResultValue);
 		}
-		catch (Exception ex)
-		{
+		catch (Exception ex) {
 			// any exceptions, we catch and return as a failure
 			return ResultBuilder.Failure<R>(ex);
 		}
@@ -214,9 +220,13 @@ public readonly struct Result<T>(T result, Exception? exception)
 
 	public async Task<Result<R>> ThenAsync<R>(Func<Task<R>> func)
 	{
-		// *** THIS NEEDS TESTING
-		if (IsError) return ResultBuilder.Failure<R>(Error);
-		if (func == null) return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+		if (IsError) {
+			return ResultBuilder.Failure<R>(Error);
+		}
+
+		if (func == null) {
+			return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+		}
 
 		return await Catcher.TryAsync(func);
 	}
@@ -229,14 +239,14 @@ public readonly struct Result<T>(T result, Exception? exception)
 	/// <returns>New Result(R)</returns>
 	public Result<R> Pipe<R>(Func<Result<T>, Result<R>> func)
 	{
-		if (func == null) return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+		if (func == null) {
+			return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+		}
 
-		try
-		{
+		try {
 			return func(this);
 		}
-		catch (Exception ex)
-		{
+		catch (Exception ex) {
 			// any exceptions, we catch and return as a failure
 			return ResultBuilder.Failure<R>(ex);
 		}
@@ -247,8 +257,13 @@ public readonly struct Result<T>(T result, Exception? exception)
 	/// </summary>
 	public Result<T> OnError(Func<Exception, T> func)
 	{
-		if (IsSuccess) return this;
-		if (func == null) return ResultBuilder.Failure<T>(new ArgumentNullException(nameof(func)));
+		if (IsSuccess) {
+			return this;
+		}
+
+		if (func == null) {
+			return ResultBuilder.Failure<T>(new ArgumentNullException(nameof(func)));
+		}
 
 		return Catcher.Try(func, Error);
 	}
@@ -258,15 +273,18 @@ public readonly struct Result<T>(T result, Exception? exception)
 	/// </summary>
 	public Result<T> OnError(Func<Exception, Result<T>> func)
 	{
-		if (IsSuccess) return this;
-		if (func == null) return ResultBuilder.Failure<T>(new ArgumentNullException(nameof(func)));
+		if (IsSuccess) {
+			return this;
+		}
 
-		try
-		{
+		if (func == null) {
+			return ResultBuilder.Failure<T>(new ArgumentNullException(nameof(func)));
+		}
+
+		try {
 			return func(Error);
 		}
-		catch (Exception ex)
-		{
+		catch (Exception ex) {
 			return ResultBuilder.Failure<T>(ex);
 		}
 	}
@@ -282,15 +300,18 @@ public readonly struct Result<T>(T result, Exception? exception)
 	/// </summary>
 	public Result<T> OnError(Func<Exception, Exception> func)
 	{
-		if (IsSuccess) return this;
-		if (func == null) return ResultBuilder.Failure<T>(new ArgumentNullException(nameof(func)));
+		if (IsSuccess) {
+			return this;
+		}
 
-		try
-		{
+		if (func == null) {
+			return ResultBuilder.Failure<T>(new ArgumentNullException(nameof(func)));
+		}
+
+		try {
 			return ResultBuilder.Failure<T>(func(Error));
 		}
-		catch (Exception ex)
-		{
+		catch (Exception ex) {
 			return ResultBuilder.Failure<T>(ex);
 		}
 	}
@@ -300,10 +321,9 @@ public readonly struct Result<T>(T result, Exception? exception)
 	/// </summary>
 	public T Unwrap()
 	{
-		if (IsSuccess)
+		if (IsSuccess) {
 			return ResultValue;
-		else
-		{
+		} else {
 			Environment.FailFast("Unwrapped an error"); // should halt the program immediately
 			throw new NotSupportedException("Unwrap should be unreachable"); // to ensure we never return
 		}

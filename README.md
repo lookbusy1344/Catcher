@@ -68,13 +68,13 @@ Result<int> result = Catcher.Call(() => ResultBuilder.Failure<int>(err));
 
 ## Chaining calls
 
-Then chain `.Then()`, `.Transform()` and `.Pipe()` calls to transform the result. These all turn a `Result<T>` into a `Result<U>` in different ways.
+Then chain `.Then()`, `.Transform()` and `.Pipe()` calls to transform the result. These all turn a `Result<In>` into a `Result<Out>` in different ways.
 
 ### Then()
 
-`Then()` is the simplest way to transform a result. It takes a single lambda which takes `T` and returns `R`, eg `i => i.ToString()` turning `int` into `string`. The result will be `Result<int>` becoming `Result<string>`.
+`Then()` is the simplest way to transform a result. It takes a single lambda which takes `In` and returns `Out`, eg `i => i.ToString()` turning `int` into `string`. The result will be `Result<int>` becoming `Result<string>`.
 
-Errors are signalled by throwing, which will give you `Result<string>.Error`.
+Errors are signalled by throwing, which will give you `Result<Out>.Error`.
 
 #### Example
 
@@ -92,7 +92,7 @@ Result<string> str = result.Then<string>(i => throw new Exception("oh no!"));
 `Transform()` is used for error resolution. It takes two lambdas, one for success and one for failure. Both convert the initial type into a common result type in a success state. Signature:
 
 ```
-public Result<R> Transform<R>(Func<T, R> success, Func<Exception, R> failure)
+public Result<Out> Transform<Out>(Func<In, Out> success, Func<Exception, Out> failure)
 ```
 
 So `success: i => i.ToString()` turns `Result<int>` into `Result<string>`, and `failure: ex => ex.Message` turns `Result<int>.Error` into `Result<string>.Success`, containing the error message.
@@ -112,9 +112,9 @@ Result<string> str = result.Transform(
 
 ### Pipe()
 
-`Pipe()` is like `Then()`, but the entire Result is passed to (and expected from) the lambda. This is useful when signalling errors **without** throwing. The lambda takes `Result<T>` and returns `Result<R>` (whereas `Then` takes `T` and returns `R`).
+`Pipe()` is like `Then()`, but the entire `Result<In>` is passed to the lambda and `Result<Out>` returned from it. This is useful when signalling errors **without** throwing.
 
-You can use `Pipe` when your own code is exception free, but ambient throws are still handled properly (since they are ubiquitous in .NET).
+You can use `Pipe()` when your own code is exception free, but ambient throws are still handled properly (since they are ubiquitous in .NET).
 
 #### Example
 

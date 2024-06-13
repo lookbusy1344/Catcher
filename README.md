@@ -72,6 +72,10 @@ Then chain `.Then()`, `.Transform()` and `.Pipe()` calls to transform the result
 
 ### Then()
 
+`Then` takes a single lambda which takes T and returns R, eg `i => i.ToString()` turning `int` into `string`. This is the simplest way to transform a result, and will result in `Result<int>` becoming `Result<string>`.
+
+#### Example
+
 This `Then()` example turns a `Result<int>` into a `Result<string>`. The lambda is bypassed entirely if the result is already in error, and the error transferred to the destination.
 
 New failures can be signalled by throwing in the lamdba.
@@ -83,9 +87,19 @@ Result<string> str = result.Then<string>(i => throw new Exception("oh no!"));
 
 ### Transform()
 
+`Transform` takes two lambdas, one for success and one for failure. Both convert the initial type into a common result type. The result is in a success state in either case, unless of course either throws! So it is a way to convert and resolve errors. Signature:
+
+```
+public Result<R> Transform<R>(Func<T, R> success, Func<Exception, R> failure)
+```
+
+So `success: i => i.ToString()` turns `Result<int>` into `Result<string>`, and `failure: ex => ex.Message` turns `Result<int>.Error` into `Result<string>.Success`.
+
+#### Example
+
 This `Transform()` example turns a `Result<int>` into a `Result<string>`, using different lambdas for success and failure.
 
-New failures can be signalled by throwing in the lamdba
+New failures can be signalled by throwing in either lamdbas
 
 ```
 Result<string> str = result.Transform(
@@ -95,6 +109,10 @@ Result<string> str = result.Transform(
 ```
 
 ### Pipe()
+
+`Pipe` is like `Then`, but the entire Result is passed to (and expected from) the lambda. This is useful when signalling errors **without** throwing. The lambda takes `Result<T>` and returns `Result<R>` (whereas `Then` takes `T` and returns `R`).
+
+#### Example
 
 This `Pipe()` example turns a `Result<int>` into a `Result<decimal>`. Here the **full** `Result<int>` is passed to the lambda, which returns a full `Result<decimal>`.
 

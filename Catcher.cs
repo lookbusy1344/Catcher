@@ -64,10 +64,10 @@ public static class Catcher
 	}
 
 	/// <summary>
-	/// Call this function which directly returns Result(R). Throwing is not necessary to signal failure
+	/// Call this function which directly returns Result(Out). Throwing is not necessary to signal failure
 	/// </summary>
 	/// <typeparam name="Out">Inner Result type</typeparam>
-	/// <param name="func">Function which returns type Result(R) directly</param>
+	/// <param name="func">Function which returns type Result(Out) directly</param>
 	public static Result<Out> Call<Out>(Func<Result<Out>> func)
 	{
 		if (func == null) {

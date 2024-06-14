@@ -89,7 +89,7 @@ Result<string> str = result.Then<string>(i => throw new Exception("oh no!"));
 
 ### Transform()
 
-`Transform()` is used for error resolution. It takes two lambdas, one used if the input is in success state and one for failure state. Both convert the initial `Result<In>` into a common result type in a success state `Result<Out>`. Call signature:
+`Transform()` is used for error resolution. It takes two lambdas, one used if the input is in success state and one for failure state. It converts the initial `Result<In>` in either state into `Result<Out>` in success state. Call signature:
 
 ```
 public Result<Out> Transform<Out>(Func<In, Out> success, Func<Exception, Out> failure)

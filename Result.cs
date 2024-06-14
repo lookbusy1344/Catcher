@@ -5,15 +5,15 @@
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
-/// This basically is a struct discriminated union of T and Exception.
+/// This basically is a struct discriminated union of In and Exception.
 /// An indicator field is not needed - if Exception is null, then Result is always valid (even if null itself)
 /// </summary>
-public readonly struct Result<T>(T result, Exception? exception)
+public readonly struct Result<In>(In result, Exception? exception)
 {
 	/// <summary>
 	/// If Error is null, this is the result (even if null itself)
 	/// </summary>
-	public required T ResultValue { get; init; } = result;
+	public required In ResultValue { get; init; } = result;
 
 	/// <summary>
 	/// If not null, this result is a failure
@@ -36,13 +36,13 @@ public readonly struct Result<T>(T result, Exception? exception)
 	/// Get the result, or re-throw. DANGER this throws!
 	/// </summary>
 #pragma warning disable CA1024 // Use properties where appropriate
-	public T GetResultOrThrow() => IsSuccess ? ResultValue : throw Error;
+	public In GetResultOrThrow() => IsSuccess ? ResultValue : throw Error;
 #pragma warning restore CA1024 // Use properties where appropriate
 
 	/// <summary>
 	/// Call the success function if success, or the failure function if failure
 	/// </summary>
-	public void Switch(Action<T> success, Action<Exception> failure)
+	public void Switch(Action<In> success, Action<Exception> failure)
 	{
 		try {
 			// these will indirectly call a fail fast if null
@@ -63,9 +63,9 @@ public readonly struct Result<T>(T result, Exception? exception)
 	}
 
 	/// <summary>
-	/// Turn success or failure into a common type R
+	/// Turn success or failure into a common type Out
 	/// </summary>
-	public R Match<R>(Func<T, R> success, Func<Exception, R> failure)
+	public Out Match<Out>(Func<In, Out> success, Func<Exception, Out> failure)
 	{
 		try {
 			// these will indirectly call a fail fast if null
@@ -86,9 +86,9 @@ public readonly struct Result<T>(T result, Exception? exception)
 	}
 
 	/// <summary>
-	/// Turn success or failure into a common type R. Any exceptions in the lambdas result in the default value
+	/// Turn success or failure into a common type Out. Any exceptions in the lambdas result in the default value
 	/// </summary>
-	public R MatchDefault<R>(Func<T, R> success, Func<Exception, R> failure)
+	public Out MatchDefault<Out>(Func<In, Out> success, Func<Exception, Out> failure)
 	{
 		try {
 			// these will indirectly call a fail fast if null
@@ -108,9 +108,9 @@ public readonly struct Result<T>(T result, Exception? exception)
 	}
 
 	/// <summary>
-	/// Transform success or failure into a common type Result(R) for further chaining. Functions return R to the chain
+	/// Transform success or failure into a common type Result(Out) for further chaining. Functions return Out to the chain
 	/// </summary>
-	public Result<R> Transform<R>(Func<T, R> success, Func<Exception, R> failure)
+	public Result<Out> Transform<Out>(Func<In, Out> success, Func<Exception, Out> failure)
 	{
 		try {
 			// these will indirectly call a fail fast if null
@@ -131,10 +131,10 @@ public readonly struct Result<T>(T result, Exception? exception)
 	}
 
 	/// <summary>
-	/// Transform success or failure into a common type Result(R) for further chaining.
-	/// Functions directly return a Result(R) to the chain, allowing greater control
+	/// Transform success or failure into a common type Result(Out) for further chaining.
+	/// Functions directly return a Result(Out) to the chain, allowing greater control
 	/// </summary>
-	public Result<R> Transform<R>(Func<T, Result<R>> success, Func<Exception, Result<R>> failure)
+	public Result<Out> Transform<Out>(Func<In, Result<Out>> success, Func<Exception, Result<Out>> failure)
 	{
 		try {
 			// these will indirectly call a fail fast if null
@@ -150,7 +150,7 @@ public readonly struct Result<T>(T result, Exception? exception)
 			}
 			catch (Exception ex) {
 				// the failure handler threw an exception, so return it as a failure Result<R>
-				return ResultBuilder.Failure<R>(ex);
+				return ResultBuilder.Failure<Out>(ex);
 			}
 		}
 		catch (Exception ex) {
@@ -163,7 +163,7 @@ public readonly struct Result<T>(T result, Exception? exception)
 	/// <summary>
 	/// On success, chain an Action that takes the result as a parameter
 	/// </summary>
-	public Result<Unit> Then(Action<T> action)
+	public Result<Unit> Then(Action<In> action)
 	{
 		// if we receive a failure, just return it
 		if (IsError) {
@@ -178,69 +178,69 @@ public readonly struct Result<T>(T result, Exception? exception)
 	}
 
 	/// <summary>
-	/// On success, chain an Func that takes the result as a parameter, and returns R
+	/// On success, chain an Func that takes the result as a parameter, and returns Out
 	/// </summary>
-	public Result<R> Then<R>(Func<T, R> func)
+	public Result<Out> Then<Out>(Func<In, Out> func)
 	{
 		// if we receive a failure, just return it
 		if (IsError) {
-			return ResultBuilder.Failure<R>(Error);
+			return ResultBuilder.Failure<Out>(Error);
 		}
 
 		if (func == null) {
-			return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
 		}
 
 		return Catcher.Try(func, ResultValue);
 	}
 
 	/// <summary>
-	/// On success, chain an Func that takes the result as a parameter, and returns Result(R) directly
+	/// On success, chain an Func that takes the result as a parameter, and returns Result(Out) directly
 	/// </summary>
-	public Result<R> Then<R>(Func<T, Result<R>> func)
+	public Result<Out> Then<Out>(Func<In, Result<Out>> func)
 	{
 		// if we receive a failure, just return it
 		if (IsError) {
-			return ResultBuilder.Failure<R>(Error);
+			return ResultBuilder.Failure<Out>(Error);
 		}
 
 		if (func == null) {
-			return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
 		}
 
 		try {
-			// the worker function returns a Result<R> directly
+			// the worker function returns a Result<Out> directly
 			return func(ResultValue);
 		}
 		catch (Exception ex) {
 			// any exceptions, we catch and return as a failure
-			return ResultBuilder.Failure<R>(ex);
+			return ResultBuilder.Failure<Out>(ex);
 		}
 	}
 
-	public async Task<Result<R>> ThenAsync<R>(Func<Task<R>> func)
+	public async Task<Result<Out>> ThenAsync<Out>(Func<Task<Out>> func)
 	{
 		if (IsError) {
-			return ResultBuilder.Failure<R>(Error);
+			return ResultBuilder.Failure<Out>(Error);
 		}
 
 		if (func == null) {
-			return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
 		}
 
 		return await Catcher.TryAsync(func);
 	}
 
 	/// <summary>
-	/// Pipe the current Result(T) and convert it into Result(R)
+	/// Pipe the current Result(In) and convert it into Result(Out)
 	/// </summary>
-	/// <typeparam name="R">Resulting type</typeparam>
+	/// <typeparam name="Out">Resulting type</typeparam>
 	/// <param name="func">Function to convert this Result into new result</param>
-	/// <returns>New Result(R)</returns>
-	public Result<R> Pipe<R>(Func<Result<T>, Result<R>> func)
+	/// <returns>New Result(Out)</returns>
+	public Result<Out> Pipe<Out>(Func<Result<In>, Result<Out>> func)
 	{
 		if (func == null) {
-			return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
 		}
 
 		try {
@@ -248,78 +248,78 @@ public readonly struct Result<T>(T result, Exception? exception)
 		}
 		catch (Exception ex) {
 			// any exceptions, we catch and return as a failure
-			return ResultBuilder.Failure<R>(ex);
+			return ResultBuilder.Failure<Out>(ex);
 		}
 	}
 
 	/// <summary>
-	/// On failure, chain an Func that takes the error as a parameter, and returns T without changing the chain type
+	/// On failure, chain an Func that takes the error as a parameter, and returns In without changing the chain type
 	/// </summary>
-	public Result<T> OnError(Func<Exception, T> func)
+	public Result<In> OnError(Func<Exception, In> func)
 	{
 		if (IsSuccess) {
 			return this;
 		}
 
 		if (func == null) {
-			return ResultBuilder.Failure<T>(new ArgumentNullException(nameof(func)));
+			return ResultBuilder.Failure<In>(new ArgumentNullException(nameof(func)));
 		}
 
 		return Catcher.Try(func, Error);
 	}
 
 	/// <summary>
-	/// On failure, chain an Func that takes the error as a parameter, and returns Result(T) without changing the chain type
+	/// On failure, chain an Func that takes the error as a parameter, and returns Result(In) without changing the chain type
 	/// </summary>
-	public Result<T> OnError(Func<Exception, Result<T>> func)
+	public Result<In> OnError(Func<Exception, Result<In>> func)
 	{
 		if (IsSuccess) {
 			return this;
 		}
 
 		if (func == null) {
-			return ResultBuilder.Failure<T>(new ArgumentNullException(nameof(func)));
+			return ResultBuilder.Failure<In>(new ArgumentNullException(nameof(func)));
 		}
 
 		try {
 			return func(Error);
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<T>(ex);
+			return ResultBuilder.Failure<In>(ex);
 		}
 	}
 
 	/// <summary>
 	/// On failure, replace the error with a new error
 	/// </summary>
-	public Result<T> OnError(Exception exception) =>
-		IsSuccess ? this : ResultBuilder.Failure<T>(exception ?? new ArgumentNullException(nameof(exception)));
+	public Result<In> OnError(Exception exception) =>
+		IsSuccess ? this : ResultBuilder.Failure<In>(exception ?? new ArgumentNullException(nameof(exception)));
 
 	/// <summary>
 	/// On failure, chain an Func that takes the error as a parameter, and replaces it with another error
 	/// </summary>
-	public Result<T> OnError(Func<Exception, Exception> func)
+	public Result<In> OnError(Func<Exception, Exception> func)
 	{
 		if (IsSuccess) {
 			return this;
 		}
 
 		if (func == null) {
-			return ResultBuilder.Failure<T>(new ArgumentNullException(nameof(func)));
+			return ResultBuilder.Failure<In>(new ArgumentNullException(nameof(func)));
 		}
 
 		try {
-			return ResultBuilder.Failure<T>(func(Error));
+			return ResultBuilder.Failure<In>(func(Error));
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<T>(ex);
+			return ResultBuilder.Failure<In>(ex);
 		}
 	}
 
 	/// <summary>
 	/// Get the success result, and fail fast if there is an error
 	/// </summary>
-	public T Unwrap()
+	public In Unwrap()
 	{
 		if (IsSuccess) {
 			return ResultValue;
@@ -334,7 +334,7 @@ public readonly struct Result<T>(T result, Exception? exception)
 	/// <summary>
 	/// Deconstruct into a 2-tuple
 	/// </summary>
-	public void Deconstruct(out T result, out Exception? exception)
+	public void Deconstruct(out In result, out Exception? exception)
 	{
 		result = ResultValue;
 		exception = Error;
@@ -343,7 +343,7 @@ public readonly struct Result<T>(T result, Exception? exception)
 	/// <summary>
 	/// Deconstruct into a 3-tuple
 	/// </summary>
-	public void Deconstruct(out T result, out Exception? exception, out bool issuccess)
+	public void Deconstruct(out In result, out Exception? exception, out bool issuccess)
 	{
 		result = ResultValue;
 		exception = Error;
@@ -364,7 +364,7 @@ public readonly struct Result<T>(T result, Exception? exception)
 	/// Fail fast, but fake a return value to keep the compiler happy
 	/// </summary>
 	[DoesNotReturn]
-	private static R NotSupported<R>(string name)
+	private static Out NotSupported<Out>(string name)
 	{
 		Environment.FailFast($"Not supported: {name}"); // should halt the program immediately
 		throw new NotSupportedException($"Not supported: {name}"); // to ensure we never return

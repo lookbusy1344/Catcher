@@ -45,61 +45,61 @@ public static class Catcher
 	}
 
 	/// <summary>
-	/// Try this function, and return a Result(R) for success or failure
+	/// Try this function, and return a Result(Out) for success or failure
 	/// </summary>
-	/// <typeparam name="R">Resulting type</typeparam>
-	/// <param name="func">Function which returns type R, and will be converted into Result(R)</param>
-	public static Result<R> Try<R>(Func<R> func)
+	/// <typeparam name="Out">Resulting type</typeparam>
+	/// <param name="func">Function which returns type Out, and will be converted into Result(Out)</param>
+	public static Result<Out> Try<Out>(Func<Out> func)
 	{
 		if (func == null) {
-			return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
 		}
 
 		try {
 			return ResultBuilder.Success(func());
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<R>(ex);
+			return ResultBuilder.Failure<Out>(ex);
 		}
 	}
 
 	/// <summary>
 	/// Call this function which directly returns Result(R). Throwing is not necessary to signal failure
 	/// </summary>
-	/// <typeparam name="R">Inner Result type</typeparam>
+	/// <typeparam name="Out">Inner Result type</typeparam>
 	/// <param name="func">Function which returns type Result(R) directly</param>
-	public static Result<R> Call<R>(Func<Result<R>> func)
+	public static Result<Out> Call<Out>(Func<Result<Out>> func)
 	{
 		if (func == null) {
-			return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
 		}
 
 		try {
 			return func();
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<R>(ex);
+			return ResultBuilder.Failure<Out>(ex);
 		}
 	}
 
 	/// <summary>
-	/// Try this function, and return a Result(R) for success or failure
+	/// Try this function, and return a Result(Out) for success or failure
 	/// </summary>
-	/// <typeparam name="T">Input type of function</typeparam>
-	/// <typeparam name="R">Result type Result(R)</typeparam>
-	/// <param name="func">Function to turn T into R</param>
+	/// <typeparam name="In">Input type of function</typeparam>
+	/// <typeparam name="Out">Result type Result(Out)</typeparam>
+	/// <param name="func">Function to turn In into Out</param>
 	/// <param name="param1">Parameter to be passed to action</param>
-	public static Result<R> Try<T, R>(Func<T, R> func, T param1)
+	public static Result<Out> Try<In, Out>(Func<In, Out> func, In param1)
 	{
 		if (func == null) {
-			return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
 		}
 
 		try {
 			return ResultBuilder.Success(func(param1));
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<R>(ex);
+			return ResultBuilder.Failure<Out>(ex);
 		}
 	}
 
@@ -122,53 +122,53 @@ public static class Catcher
 	}
 
 	/// <summary>
-	/// Try this async function (which returns a Task(R)), and return an awaitable Task(Result(R))
+	/// Try this async function (which returns a Task(Out)), and return an awaitable Task(Result(Out))
 	/// </summary>
-	public static async Task<Result<R>> TryAsync<R>(Func<Task<R>> func)
+	public static async Task<Result<Out>> TryAsync<Out>(Func<Task<Out>> func)
 	{
 		if (func == null) {
-			return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
 		}
 
 		try {
 			return ResultBuilder.Success(await func()); // all returns are wrapped in a Task
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<R>(ex);
+			return ResultBuilder.Failure<Out>(ex);
 		}
 	}
 
 	/// <summary>
-	/// Try this async function (which returns a Task(R)), and return an awaitable Task(Result(R)). Takes a T as input
+	/// Try this async function (which returns a Task(Out)), and return an awaitable Task(Result(Out)). Takes a In as input
 	/// </summary>
-	public static async Task<Result<R>> TryAsync<T, R>(Func<T, Task<R>> func, T param1)
+	public static async Task<Result<Out>> TryAsync<In, Out>(Func<In, Task<Out>> func, In param1)
 	{
 		if (func == null) {
-			return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
 		}
 
 		try {
 			return ResultBuilder.Success(await func(param1)); // all returns are wrapped in a Task
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<R>(ex);
+			return ResultBuilder.Failure<Out>(ex);
 		}
 	}
 
 	/// <summary>
-	/// Call this async function (which returns a Task(Result(R))) directly. Throwing is not necessary to signal failure
+	/// Call this async function (which returns a Task(Result(Out))) directly. Throwing is not necessary to signal failure
 	/// </summary>
-	public static async Task<Result<R>> CallAsync<R>(Func<Task<Result<R>>> func)
+	public static async Task<Result<Out>> CallAsync<Out>(Func<Task<Result<Out>>> func)
 	{
 		if (func == null) {
-			return ResultBuilder.Failure<R>(new ArgumentNullException(nameof(func)));
+			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
 		}
 
 		try {
 			return await func();
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<R>(ex);
+			return ResultBuilder.Failure<Out>(ex);
 		}
 	}
 }

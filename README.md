@@ -72,7 +72,7 @@ Then chain `.Then()`, `.Transform()` and `.Pipe()` calls to transform the result
 
 ### Then()
 
-`Then()` is the simplest way to transform a result. It takes a single lambda which takes `In` and returns `Out`, eg `i => i.ToString()` turning `int` into `string`. The result will be `Result<int>` becoming `Result<string>`.
+`Then()` is the simplest way to transform a result. It uses a single lambda which takes type `In` and returns type `Out`, eg `i => i.ToString()` turning `int` into `string`. The effect will be `Result<int>` becoming `Result<string>`.
 
 Errors are signalled by throwing, which will give you `Result<Out>.Error`.
 
@@ -89,13 +89,15 @@ Result<string> str = result.Then<string>(i => throw new Exception("oh no!"));
 
 ### Transform()
 
-`Transform()` is used for error resolution. It takes two lambdas, one for success and one for failure. Both convert the initial type into a common result type in a success state. Signature:
+`Transform()` is used for error resolution. It takes two lambdas, one used if the input is in success state and one for failure state. Both convert the initial `Result<In>` into a common result type in a success state `Result<Out>`. Call signature:
 
 ```
 public Result<Out> Transform<Out>(Func<In, Out> success, Func<Exception, Out> failure)
 ```
 
 So `success: i => i.ToString()` turns `Result<int>` into `Result<string>`, and `failure: ex => ex.Message` turns `Result<int>.Error` into `Result<string>.Success`, containing the error message.
+
+Like `Then()` errors are signalled by throwing, which will give you `Result<Out>.Error`.
 
 #### Example
 
@@ -112,7 +114,7 @@ Result<string> str = result.Transform(
 
 ### Pipe()
 
-`Pipe()` is like `Then()`, but the entire `Result<In>` is passed to the lambda and `Result<Out>` returned from it. This is useful when signalling errors **without** throwing.
+`Pipe()` is like `Then()`, but the entire `Result<In>` is passed into the lambda and `Result<Out>` returned from it. This is useful when signalling errors **without** throwing.
 
 You can use `Pipe()` when your own code is exception free, but ambient throws are still handled properly (since they are ubiquitous in .NET).
 

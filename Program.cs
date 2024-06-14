@@ -9,6 +9,8 @@ internal static class Program
 
 	private static async Task Main()
 	{
+		CatcherExample.CheckEquality();
+
 		await CatcherExample.GoAsync();
 	}
 

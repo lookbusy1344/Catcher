@@ -43,6 +43,25 @@ internal static class CatcherExample
 		);
 	}
 
+	public static void CheckEquality()
+	{
+		var a = ResultBuilder.Success(1);
+		var b = ResultBuilder.Success(1);
+		Assert(a == b); // both success and match
+
+		b = ResultBuilder.Success(2);
+		Assert(a != b); // both success but don't match
+
+		b = ResultBuilder.Failure<int>(new Exception("a"));
+		Assert(a != b); // one success, one failure
+
+		a = ResultBuilder.Failure<int>(new Exception("another"));
+		Assert(a != b); // both failure but don't match
+
+		a = ResultBuilder.Failure<int>(new Exception("a"));
+		Assert(a == b); // both failure and match
+	}
+
 	public static void Go()
 	{
 		var s = "hello";
@@ -160,5 +179,12 @@ internal static class CatcherExample
 			success: s => Console.WriteLine($"Final success is {s}"),
 			failure: ex => Console.WriteLine($"ERROR: {ex.Message}")
 		);
+	}
+
+	private static void Assert(bool b)
+	{
+		if (!b) {
+			throw new Exception("Assertion failed");
+		}
 	}
 }

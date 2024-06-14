@@ -8,7 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 /// This basically is a struct discriminated union of In and Exception.
 /// An indicator field is not needed - if Exception is null, then Result is always valid (even if null itself)
 /// </summary>
-public readonly struct Result<In>(In result, Exception? exception)
+public readonly struct Result<In>(In result, Exception? exception) : IEquatable<Result<In>>
 {
 	/// <summary>
 	/// If Error is null, this is the result (even if null itself)
@@ -350,23 +350,34 @@ public readonly struct Result<In>(In result, Exception? exception)
 		issuccess = IsSuccess;
 	}
 
-	/// <summary>
-	/// We can't support this, and we cant throw so we fail fast
-	/// </summary>
-	public override bool Equals(object? obj) => NotSupported<bool>(nameof(Equals));
-
-	/// <summary>
-	/// We can't support this, and we cant throw so we fail fast
-	/// </summary>
-	public override int GetHashCode() => NotSupported<int>(nameof(GetHashCode));
-
-	/// <summary>
-	/// Fail fast, but fake a return value to keep the compiler happy
-	/// </summary>
-	[DoesNotReturn]
-	private static Out NotSupported<Out>(string name)
+	public bool Equals(Result<In> other)
 	{
-		Environment.FailFast($"Not supported: {name}"); // should halt the program immediately
-		throw new NotSupportedException($"Not supported: {name}"); // to ensure we never return
+		// if both in error, compare the errors
+		if (IsError && other.IsError) { return EqualityComparer<Exception>.Default.Equals(Error, other.Error); }
+
+		// here one CANNOT be in error state. If the other is an error they are not equal
+		if (IsError || other.IsError) { return false; }
+
+		// Both in Success state, so compare the values
+		// Use EqualityComparer for a more flexible and null-safe comparison
+		return EqualityComparer<In>.Default.Equals(this.ResultValue, other.ResultValue);
 	}
+
+	public override bool Equals(object? obj) => obj != null && Equals((Result<In>)obj);
+
+	public override int GetHashCode() => IsError ? Error.GetHashCode() : ResultValue?.GetHashCode() ?? 0;
+
+	public static bool operator ==(Result<In> left, Result<In> right) => left.Equals(right);
+
+	public static bool operator !=(Result<In> left, Result<In> right) => !left.Equals(right);
+
+	///// <summary>
+	///// Fail fast, but fake a return value to keep the compiler happy
+	///// </summary>
+	//[DoesNotReturn]
+	//private static Out NotSupported<Out>(string name)
+	//{
+	//	Environment.FailFast($"Not supported: {name}"); // should halt the program immediately
+	//	throw new NotSupportedException($"Not supported: {name}"); // to ensure we never return
+	//}
 }

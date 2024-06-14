@@ -182,4 +182,11 @@ public readonly record struct Unit
 	/// Singleton instance
 	/// </summary>
 	public static Unit Value { get; }
+
+	/// <summary>
+	/// Unit is always equal to another unit
+	/// </summary>
+	public bool Equals(Unit other) => true;
+
+	public override int GetHashCode() => 0;
 }

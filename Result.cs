@@ -353,7 +353,7 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 	public bool Equals(Result<In> other)
 	{
 		// if both in error, compare the errors
-		if (IsError && other.IsError) { return EqualityComparer<Exception>.Default.Equals(Error, other.Error); }
+		if (IsError && other.IsError) { return ExceptionEquals(Error, other.Error); }
 
 		// here one CANNOT be in error state. If the other is an error they are not equal
 		if (IsError || other.IsError) { return false; }
@@ -365,11 +365,26 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 
 	public override bool Equals(object? obj) => obj != null && Equals((Result<In>)obj);
 
-	public override int GetHashCode() => IsError ? Error.GetHashCode() : ResultValue?.GetHashCode() ?? 0;
+	public override int GetHashCode() => IsError ? ExceptionHashCode(Error) : ResultValue?.GetHashCode() ?? 0;
 
 	public static bool operator ==(Result<In> left, Result<In> right) => left.Equals(right);
 
 	public static bool operator !=(Result<In> left, Result<In> right) => !left.Equals(right);
+
+	/// <summary>
+	/// Compare two exceptions for equality, on type and message
+	/// </summary>
+	private static bool ExceptionEquals(Exception ex1, Exception ex2)
+	{
+		if (object.ReferenceEquals(ex1, ex2)) { return true; }
+
+		return ex1.GetType() == ex2.GetType() && ex1.Message == ex2.Message;
+	}
+
+	/// <summary>
+	/// Exceptions give ref based hashcodes, this compares type and message
+	/// </summary>
+	private static int ExceptionHashCode(Exception ex) => HashCode.Combine(ex.GetType(), ex.Message);
 
 	///// <summary>
 	///// Fail fast, but fake a return value to keep the compiler happy

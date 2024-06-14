@@ -2,6 +2,8 @@
 
 namespace Catcher;
 
+#pragma warning disable IDE0059 // Unnecessary assignment of a value
+
 internal static class CatcherExample
 {
 	/// <summary>
@@ -60,6 +62,14 @@ internal static class CatcherExample
 
 		a = ResultBuilder.Failure<int>(new Exception("a"));
 		Assert(a == b); // both failure and match
+
+		var hash1 = a.GetHashCode();
+		var hash2 = b.GetHashCode();
+
+		a = ResultBuilder.Failure<int>(new NullReferenceException("a"));
+		Assert(a != b); // both failure and messages same but different types
+
+		hash1 = a.GetHashCode();
 	}
 
 	public static void Go()

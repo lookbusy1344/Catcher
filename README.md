@@ -1,6 +1,6 @@
 # Catcher - a library for helping with exception free C#
 
-First it's important to say, **stick with Exceptions, they are idiomatic and far better than other forms of error handling** in C#. This is not Rust!
+First it's important to say, **stick with exceptions, they are idiomatic and far better than other forms of error handling** in C#. This is not Rust!
 
 To quote *Framework Design Guidelines* page 250:
 
@@ -15,17 +15,25 @@ And on page 255:
 > **DO NOT return error codes.**
 > Report execution failures by throwing exceptions. If a member cannot successfully do what it is designed to do, it should be considered an execution failure, and an exception should be thrown.
 
+Most cuttingly:
+
 > One of the **biggest misconceptions** about exceptions is that they are for “exceptional conditions.” The reality is that they are intended for communicating error conditions. From a framework design perspective, there is no such thing as an “exceptional condition.” **One man’s exceptional condition is another man’s chronic condition.**
 
-Remember .NET contains tens of thousands of `throw`s just in the BCL, regardless of anything in your own code. Methods like `int.TryParse()` still throw **(they just dont throw for the one common case)**.
+## Avoiding exceptions in .NET is hard
+
+Even if you never throw in your own code, .NET contains tens of thousands of `throw`s just in the core runtime. Methods like `int.TryParse()` still throw **they just dont throw for the one common case**. The *Try Pattern* is not exception-free.
 
 Every single method and constructor in the BCL can potentially throw, and most operators can too.
 
-## However if you want to proceed
+Checking the .NET 8 runtime on 28 August 2024 (https://github.com/dotnet/runtime commit c1a9f26efa4fcf2e3fdcd), the code contains **38,840** instances of `throw new`. If we want to be exception free, we need to handle all of these!
 
-This is a small library to help you keep parts of your code notionally exception free, in a functional monadic style.
+No easy task, but that's what we are taking on here.
 
-This is built around `Result<T>` which is a discriminated union of `T` and `Exception`. If the worker method succeeds, `T` is returned. If it throws, the exception is returned. It shouldn't be possible to throw out of these methods, anything that cannot be caught and returned leads to a `FailFast`.
+## So against my advice... if you want to proceed
+
+This is a small conceptual library to help you keep parts of your code entirely exception free, in a functional monadic style.
+
+It is built around `Result<T>` which is a discriminated union of `T` and `Exception`. If the worker method succeeds, `T` is returned. If it throws, the exception is returned. It shouldn't be possible to throw out of these methods, anything that cannot be caught and returned leads to a `FailFast`.
 
 When no return value is expected, we use `Result<Unit>` which contains no payload, just the exception if there is one.
 

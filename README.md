@@ -25,9 +25,9 @@ Even if you never throw in your own code, .NET contains tens of thousands of `th
 
 Every single method and constructor in the BCL can potentially throw, and most operators can too.
 
-Checking the .NET 8 runtime on 28 August 2024 (https://github.com/dotnet/runtime commit c1a9f26efa4fcf2e3fdcd), the code contains **38,840** instances of `throw new`. If we want to be exception free, we need to handle all of these!
+Checking the .NET 8 runtime on 28 August 2024 (https://github.com/dotnet/runtime commit c1a9f26efa4fcf2e3fdcd), the code contains **38,840** instances of `throw new`. If we want to be exception free, we need to handle all of these.
 
-No easy task, but that's what we are taking on here.
+No easy task!
 
 ## So against my advice... if you want to proceed
 

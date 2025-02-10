@@ -20,6 +20,7 @@ public static class ResultBuilder
 			Environment.FailFast("Setting Result failure with a null exception", exception);
 			throw new ArgumentNullException(nameof(exception)); // unreachable
 		}
+
 		return new() { ResultValue = default!, Error = exception };
 	}
 

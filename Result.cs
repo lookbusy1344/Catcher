@@ -74,9 +74,9 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 
 			if (IsSuccess) {
 				return success(ResultValue);
-			} else {
-				return failure(Error);
 			}
+
+			return failure(Error);
 		}
 		catch (Exception ex) {
 			// an exception in the match function is a fatal error
@@ -97,9 +97,9 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 
 			if (IsSuccess) {
 				return success(ResultValue);
-			} else {
-				return failure(Error);
 			}
+
+			return failure(Error);
 		}
 		catch {
 			// any problems cause the default value to be returned
@@ -119,9 +119,9 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 
 			if (IsSuccess) {
 				return Catcher.Try(success, ResultValue);
-			} else {
-				return Catcher.Try(failure, Error);
 			}
+
+			return Catcher.Try(failure, Error);
 		}
 		catch (Exception ex) {
 			// an exception in the transform function is a fatal error
@@ -144,9 +144,9 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 			try {
 				if (IsSuccess) {
 					return success(ResultValue);
-				} else {
-					return failure(Error);
 				}
+
+				return failure(Error);
 			}
 			catch (Exception ex) {
 				// the failure handler threw an exception, so return it as a failure Result<R>
@@ -323,10 +323,10 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 	{
 		if (IsSuccess) {
 			return ResultValue;
-		} else {
-			Environment.FailFast("Unwrapped an error"); // should halt the program immediately
-			throw new NotSupportedException("Unwrap should be unreachable"); // to ensure we never return
 		}
+
+		Environment.FailFast("Unwrapped an error"); // should halt the program immediately
+		throw new NotSupportedException("Unwrap should be unreachable"); // to ensure we never return
 	}
 
 	public override string? ToString() => IsSuccess ? $"{ResultValue}" : $"ERROR({Error})";

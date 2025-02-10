@@ -134,9 +134,9 @@ internal static class CatcherExample
 				Console.WriteLine($"File size is {length}");
 				if (length < 1000) {
 					return ResultBuilder.Failure<long>(new Exception("File too small"));
-				} else {
-					return ResultBuilder.Success(length + 1);
 				}
+
+				return ResultBuilder.Success(length + 1);
 			})
 			.Then(length => {
 				// chaining long -> Result<string>

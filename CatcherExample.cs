@@ -1,6 +1,6 @@
-﻿using System;
+﻿namespace Catcher;
 
-namespace Catcher;
+using System;
 
 #pragma warning disable IDE0059 // Unnecessary assignment of a value
 

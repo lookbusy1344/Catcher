@@ -72,11 +72,7 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 			ArgumentNullException.ThrowIfNull(success);
 			ArgumentNullException.ThrowIfNull(failure);
 
-			if (IsSuccess) {
-				return success(ResultValue);
-			}
-
-			return failure(Error);
+			return IsSuccess ? success(ResultValue) : failure(Error);
 		}
 		catch (Exception ex) {
 			// an exception in the match function is a fatal error
@@ -95,11 +91,7 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 			ArgumentNullException.ThrowIfNull(success);
 			ArgumentNullException.ThrowIfNull(failure);
 
-			if (IsSuccess) {
-				return success(ResultValue);
-			}
-
-			return failure(Error);
+			return IsSuccess ? success(ResultValue) : failure(Error);
 		}
 		catch {
 			// any problems cause the default value to be returned
@@ -117,11 +109,7 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 			ArgumentNullException.ThrowIfNull(success);
 			ArgumentNullException.ThrowIfNull(failure);
 
-			if (IsSuccess) {
-				return Catcher.Try(success, ResultValue);
-			}
-
-			return Catcher.Try(failure, Error);
+			return IsSuccess ? Catcher.Try(success, ResultValue) : Catcher.Try(failure, Error);
 		}
 		catch (Exception ex) {
 			// an exception in the transform function is a fatal error
@@ -142,11 +130,7 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 			ArgumentNullException.ThrowIfNull(failure);
 
 			try {
-				if (IsSuccess) {
-					return success(ResultValue);
-				}
-
-				return failure(Error);
+				return IsSuccess ? success(ResultValue) : failure(Error);
 			}
 			catch (Exception ex) {
 				// the failure handler threw an exception, so return it as a failure Result<R>
@@ -166,15 +150,15 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 	public Result<Unit> Then(Action<In> action)
 	{
 		// if we receive a failure, just return it
+#pragma warning disable IDE0046 // Convert to conditional expression
 		if (IsError) {
 			return ResultBuilder.Failure<Unit>(Error);
 		}
+#pragma warning restore IDE0046 // Convert to conditional expression
 
-		if (action == null) {
-			return ResultBuilder.Failure<Unit>(new ArgumentNullException(nameof(action)));
-		}
-
-		return Catcher.Try(action, ResultValue);
+		return action == null
+			? ResultBuilder.Failure<Unit>(new ArgumentNullException(nameof(action)))
+			: Catcher.Try(action, ResultValue);
 	}
 
 	/// <summary>
@@ -183,15 +167,15 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 	public Result<Out> Then<Out>(Func<In, Out> func)
 	{
 		// if we receive a failure, just return it
+#pragma warning disable IDE0046 // Convert to conditional expression
 		if (IsError) {
 			return ResultBuilder.Failure<Out>(Error);
 		}
+#pragma warning restore IDE0046 // Convert to conditional expression
 
-		if (func == null) {
-			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
-		}
-
-		return Catcher.Try(func, ResultValue);
+		return func == null
+			? ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)))
+			: Catcher.Try(func, ResultValue);
 	}
 
 	/// <summary>
@@ -220,15 +204,15 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 
 	public async Task<Result<Out>> ThenAsync<Out>(Func<Task<Out>> func)
 	{
+#pragma warning disable IDE0046 // Convert to conditional expression
 		if (IsError) {
 			return ResultBuilder.Failure<Out>(Error);
 		}
+#pragma warning restore IDE0046 // Convert to conditional expression
 
-		if (func == null) {
-			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
-		}
-
-		return await Catcher.TryAsync(func);
+		return func == null
+			? ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)))
+			: await Catcher.TryAsync(func);
 	}
 
 	/// <summary>
@@ -257,15 +241,15 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 	/// </summary>
 	public Result<In> OnError(Func<Exception, In> func)
 	{
+#pragma warning disable IDE0046 // Convert to conditional expression
 		if (IsSuccess) {
 			return this;
 		}
+#pragma warning restore IDE0046 // Convert to conditional expression
 
-		if (func == null) {
-			return ResultBuilder.Failure<In>(new ArgumentNullException(nameof(func)));
-		}
-
-		return Catcher.Try(func, Error);
+		return func == null
+			? ResultBuilder.Failure<In>(new ArgumentNullException(nameof(func)))
+			: Catcher.Try(func, Error);
 	}
 
 	/// <summary>
@@ -374,12 +358,8 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 	/// <summary>
 	/// Compare two exceptions for equality, on type and message
 	/// </summary>
-	private static bool ExceptionEquals(Exception ex1, Exception ex2)
-	{
-		if (object.ReferenceEquals(ex1, ex2)) { return true; }
-
-		return ex1.GetType() == ex2.GetType() && ex1.Message == ex2.Message;
-	}
+	private static bool ExceptionEquals(Exception ex1, Exception ex2) =>
+		object.ReferenceEquals(ex1, ex2) || (ex1.GetType() == ex2.GetType() && ex1.Message == ex2.Message);
 
 	/// <summary>
 	/// Exceptions give ref based hashcodes, this compares type and message

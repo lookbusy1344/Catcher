@@ -122,21 +122,15 @@ internal static class CatcherExample
 			// this returns long, and starts a chain with Result<long>
 			Console.WriteLine("Step 1");
 			var file = new FileInfo(Program.FileName);
-			if (!file.Exists) {
-				throw new FileNotFoundException($"Database file \"{file.FullName}\" not found.");
-			}
-
-			return file.Length;
+			return !file.Exists ? throw new FileNotFoundException($"Database file \"{file.FullName}\" not found.") : file.Length;
 		})
 			.Then(length => {
 				// chaining long -> Result<long>
 				Console.WriteLine("Step 2");
 				Console.WriteLine($"File size is {length}");
-				if (length < 1000) {
-					return ResultBuilder.Failure<long>(new Exception("File too small"));
-				}
-
-				return ResultBuilder.Success(length + 1);
+				return length < 1000
+					? ResultBuilder.Failure<long>(new Exception("File too small"))
+					: ResultBuilder.Success(length + 1);
 			})
 			.Then(length => {
 				// chaining long -> Result<string>

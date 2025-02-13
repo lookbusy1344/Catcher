@@ -52,15 +52,15 @@ public static class ResultBuilder
 	public static Result<T> RemoveNullable<T>(Result<T?> result) where T : class
 	{
 		// I'd prefer these in Result<T>, but cant because of the generic constraint
+#pragma warning disable IDE0046 // Convert to conditional expression
 		if (result.IsError) {
 			return Failure<T>(result.Error!);
 		}
+#pragma warning restore IDE0046 // Convert to conditional expression
 
-		if (result.ResultValue == null) {
-			return Failure<T>(new ArgumentNullException(nameof(result)));
-		}
-
-		return Success(result.ResultValue);
+		return result.ResultValue == null
+			? Failure<T>(new ArgumentNullException(nameof(result)))
+			: Success(result.ResultValue);
 	}
 
 	/// <summary>
@@ -70,14 +70,14 @@ public static class ResultBuilder
 	public static Result<T> RemoveNullable<T>(Result<T?> result) where T : struct
 	{
 		// I'd prefer these in Result<T>, but cant because of the generic constraint
+#pragma warning disable IDE0046 // Convert to conditional expression
 		if (result.IsError) {
 			return Failure<T>(result.Error!);
 		}
+#pragma warning restore IDE0046 // Convert to conditional expression
 
-		if (!result.ResultValue.HasValue) {
-			return Failure<T>(new ArgumentNullException(nameof(result)));
-		}
-
-		return Success(result.ResultValue.Value);
+		return !result.ResultValue.HasValue
+			? Failure<T>(new ArgumentNullException(nameof(result)))
+			: Success(result.ResultValue.Value);
 	}
 }

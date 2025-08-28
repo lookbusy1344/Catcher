@@ -1,7 +1,6 @@
 ﻿namespace Catcher;
 
 #pragma warning disable CA1815, CA2231, CA1066 // Equals and operator equals on value types
-
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
@@ -58,7 +57,7 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 		catch (Exception ex) {
 			// an exception in the switch function is a fatal error
 			Environment.FailFast("An unexpected error occurred in Switch", ex);
-			throw;  // unreachable
+			throw; // unreachable
 		}
 	}
 
@@ -77,7 +76,7 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 		catch (Exception ex) {
 			// an exception in the match function is a fatal error
 			Environment.FailFast("An unexpected error occurred in Match", ex);
-			throw;  // unreachable
+			throw; // unreachable
 		}
 	}
 
@@ -114,7 +113,7 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 		catch (Exception ex) {
 			// an exception in the transform function is a fatal error
 			Environment.FailFast("An unexpected error occurred in Transform", ex);
-			throw;  // unreachable
+			throw; // unreachable
 		}
 	}
 
@@ -140,7 +139,7 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 		catch (Exception ex) {
 			// an exception in the transform function is a fatal error
 			Environment.FailFast("An unexpected error occurred in Transform", ex);
-			throw;  // unreachable
+			throw; // unreachable
 		}
 	}
 
@@ -344,7 +343,7 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 
 		// Both in Success state, so compare the values
 		// Use EqualityComparer for a more flexible and null-safe comparison
-		return EqualityComparer<In>.Default.Equals(this.ResultValue, other.ResultValue);
+		return EqualityComparer<In>.Default.Equals(ResultValue, other.ResultValue);
 	}
 
 	public override bool Equals(object? obj) => obj != null && Equals((Result<In>)obj);
@@ -359,7 +358,7 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 	/// Compare two exceptions for equality, on type and message
 	/// </summary>
 	private static bool ExceptionEquals(Exception ex1, Exception ex2) =>
-		object.ReferenceEquals(ex1, ex2) || (ex1.GetType() == ex2.GetType() && ex1.Message == ex2.Message);
+		ReferenceEquals(ex1, ex2) || (ex1.GetType() == ex2.GetType() && ex1.Message == ex2.Message);
 
 	/// <summary>
 	/// Exceptions give ref based hashcodes, this compares type and message

@@ -82,8 +82,8 @@ These are NOT bugs:
 ## Framework Integration
 
 ### .NET Version
-Currently targets .NET 10. When upgrading:
-- Maintain C# 13 feature usage
+Currently targets .NET 11 (C# 15, the SDK default). When upgrading:
+- Use the latest C# language features
 - Test nullability warnings carefully
 - Verify attribute behavior hasn't changed
 

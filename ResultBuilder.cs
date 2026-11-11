@@ -8,21 +8,12 @@ public static class ResultBuilder
 	/// <summary>
 	/// Build a success result
 	/// </summary>
-	public static Result<T> Success<T>(T result) => new() { ResultValue = result, Error = null };
+	public static Result<T> Success<T>(T result) => new(result);
 
 	/// <summary>
-	/// Build a failure result
+	/// Build a failure result. A null exception becomes an ArgumentNullException
 	/// </summary>
-	public static Result<T> Failure<T>(Exception exception)
-	{
-		// not allowed to set failure exception to null
-		if (exception == null) {
-			Environment.FailFast("Setting Result failure with a null exception", exception);
-			throw new ArgumentNullException(nameof(exception)); // unreachable
-		}
-
-		return new() { ResultValue = default!, Error = exception };
-	}
+	public static Result<T> Failure<T>(Exception exception) => new(exception);
 
 	/// <summary>
 	/// Unit success (with no payload)

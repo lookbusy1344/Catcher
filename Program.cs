@@ -8,6 +8,7 @@ internal static class Program
 	private static Task Main()
 	{
 		CatcherExample.CheckEquality();
+		CatcherExample.CheckUnion();
 
 		return CatcherExample.GoAsync();
 	}

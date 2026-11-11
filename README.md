@@ -37,6 +37,39 @@ It is built around `Result<T>` which is a discriminated union of `T` and `Except
 
 When no return value is expected, we use `Result<Unit>` which contains no payload, just the exception if there is one.
 
+## Result is a C# 15 union
+
+`Result<T>` is a custom [union type](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/union) (.NET 11, C# 15) with case types `T` and `Exception`. It is a `readonly struct` marked `[Union]` that implements `IUnion`. The union core lives in `ResultUnion.cs`. The chaining methods live in `Result.cs`.
+
+Each case type converts implicitly:
+
+```
+Result<int> ok = 42;
+Result<int> bad = new InvalidOperationException("boom");
+```
+
+`switch` and `is` patterns test the contents. A `switch` that handles both case types is exhaustive, so it needs no discard arm:
+
+```
+string text = result switch {
+	int i => $"ok {i}",
+	Exception e => $"error {e.Message}",
+};
+```
+
+The struct stores `T` and `Exception` in typed fields. It implements the non-boxing access pattern: `TryGetValue(out T)`, `TryGetValue(out Exception)` and `HasValue`. The compiler calls these for type and null patterns, so a value-type `T` is never boxed during matching. `Value` returns the contents as `object?` and boxes a value-type `T`. Use it only where an `object` is needed.
+
+Null rules:
+
+- `Error` is the discriminator. A success may hold `null`. `IsSuccess` is then true, `HasValue` is false, and the `null` pattern matches. For a nullable `T` such as `Result<string?>`, the compiler requires a `null` arm.
+- `default(Result<T>)` is a success holding `default(T)`.
+- The `null` literal converts to the `Exception` case. A null exception becomes a failure holding `ArgumentNullException`, so `result == null` is false and does not crash.
+
+Limits:
+
+- With `Result<Exception>`, both case types are `Exception`. The implicit conversion is ambiguous (CS0457), so build these with `ResultBuilder`.
+- With `Result<object>`, an `Exception` converts to the failure case. A success holding an `Exception` matches `object`, not `Exception`. Test `IsError` instead.
+
 ## Traditional vs Catcher call signatures
 
 |Traditional|Catcher|

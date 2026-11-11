@@ -4,33 +4,10 @@ namespace Catcher;
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
-/// This basically is a struct discriminated union of In and Exception.
-/// An indicator field is not needed - if Exception is null, then Result is always valid (even if null itself)
+/// Chaining, matching and equality for the Result union. The union core is in ResultUnion.cs
 /// </summary>
-public readonly struct Result<In>(In result, Exception? exception) : IEquatable<Result<In>>
+public readonly partial struct Result<In> : IEquatable<Result<In>>
 {
-	/// <summary>
-	/// If Error is null, this is the result (even if null itself)
-	/// </summary>
-	public required In ResultValue { get; init; } = result;
-
-	/// <summary>
-	/// If not null, this result is a failure
-	/// </summary>
-	public required Exception? Error { get; init; } = exception;
-
-	/// <summary>
-	/// This has an attribute to indicate that if the result is true, then the exception is null
-	/// </summary>
-	[MemberNotNullWhen(false, nameof(Error))]
-	public bool IsSuccess => Error == null;
-
-	/// <summary>
-	/// This has an attribute to indicate that if the result is true, then the exception is not null
-	/// </summary>
-	[MemberNotNullWhen(true, nameof(Error))]
-	public bool IsError => Error != null;
-
 	/// <summary>
 	/// Get the result, or re-throw. DANGER this throws!
 	/// </summary>
@@ -346,7 +323,7 @@ public readonly struct Result<In>(In result, Exception? exception) : IEquatable<
 		return EqualityComparer<In>.Default.Equals(ResultValue, other.ResultValue);
 	}
 
-	public override bool Equals(object? obj) => obj != null && Equals((Result<In>)obj);
+	public override bool Equals(object? obj) => obj is Result<In> other && Equals(other);
 
 	public override int GetHashCode() => IsError ? ExceptionHashCode(Error) : ResultValue?.GetHashCode() ?? 0;
 

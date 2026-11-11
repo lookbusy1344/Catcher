@@ -1,6 +1,7 @@
 namespace Catcher;
 
 using System;
+using System.Runtime.CompilerServices;
 
 #pragma warning disable IDE0059 // Unnecessary assignment of a value
 
@@ -70,6 +71,83 @@ internal static class CatcherExample
 		Assert(a != b); // both failure and messages same but different types
 
 		hash1 = a.GetHashCode();
+	}
+
+	public static void CheckUnion()
+	{
+		const int answer = 42;
+		const string boom = "boom";
+		var exception = new InvalidOperationException(boom);
+
+		// implicit union conversions from each case type
+		Result<int> ok = answer;
+		Result<int> bad = exception;
+		Assert(ok.IsSuccess && ok.ResultValue == answer);
+		Assert(bad.IsError && ReferenceEquals(bad.Error, exception));
+
+		// exhaustive switch over the case types, no discard arm
+		Assert(Describe(ok) == "ok 42");
+		Assert(Describe(bad) == "error boom");
+
+		// non-boxing access pattern
+		Assert(ok.TryGetValue(out int okValue) && okValue == answer);
+		Assert(!ok.TryGetValue(out Exception? _));
+		Assert(!bad.TryGetValue(out int _));
+		Assert(bad.TryGetValue(out Exception? badError) && ReferenceEquals(badError, exception));
+		Assert(ok.HasValue);
+		Assert(bad.HasValue);
+
+		// boxed access through IUnion.Value
+		Assert(ok.Value is int boxed && boxed == answer);
+		Assert(ReferenceEquals(bad.Value, exception));
+
+		// a success holding null has no contents, but is still a success
+		var nullString = ResultBuilder.Success<string?>(null);
+		Assert(nullString.IsSuccess);
+		Assert(!nullString.HasValue);
+		Assert(nullString.Value is null);
+		Assert(!nullString.TryGetValue(out string? _));
+		Assert(nullString is null);
+		Assert(DescribeNullable(nullString) == "null");
+		Assert(DescribeNullable(ResultBuilder.Success<string?>("hi")) == "ok hi");
+		Assert(DescribeNullable(ResultBuilder.Failure<string?>(exception)) == "error boom");
+
+		// nullable value type case: null is no contents, a value matches the underlying type
+		const int five = 5;
+		Result<int?> nullInt = (int?)null;
+		Result<int?> someInt = (int?)five;
+		Assert(nullInt.IsSuccess && !nullInt.HasValue && !nullInt.TryGetValue(out int? _));
+		Assert(someInt.TryGetValue(out int? someValue) && someValue == five);
+		Assert(someInt is int unwrapped && unwrapped == five);
+
+		// default is a success holding default(T)
+		Result<int> zero = default;
+		Assert(zero.IsSuccess && zero.HasValue);
+		Assert(zero.TryGetValue(out int zeroValue) && zeroValue == 0);
+		Assert(zero.Value is int boxedZero && boxedZero == 0);
+
+		// equality through union conversion, and Equals(object) on unrelated types
+		Assert(ok == answer);
+		Assert(bad == new InvalidOperationException(boom));
+		Assert(ok.Equals((object)ResultBuilder.Success(answer)));
+		Assert(!ok.Equals("not a result"));
+		Assert(!ok.Equals((object?)null));
+
+		// null converts to the Exception case, which becomes an ArgumentNullException failure
+		var nullError = ResultBuilder.Failure<int>(null!);
+		Assert(nullError.Error is ArgumentNullException { ParamName: "error" });
+		Assert(ok != null!);
+
+		static string Describe(Result<int> result) => result switch {
+			int i => $"ok {i}",
+			Exception e => $"error {e.Message}",
+		};
+
+		static string DescribeNullable(Result<string?> result) => result switch {
+			string s => $"ok {s}",
+			Exception e => $"error {e.Message}",
+			null => "null",
+		};
 	}
 
 	public static void Go()
@@ -185,10 +263,10 @@ internal static class CatcherExample
 		);
 	}
 
-	private static void Assert(bool b)
+	private static void Assert(bool b, [CallerArgumentExpression(nameof(b))] string? expression = null)
 	{
 		if (!b) {
-			throw new("Assertion failed");
+			throw new($"Assertion failed: {expression}");
 		}
 	}
 }

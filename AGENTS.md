@@ -10,7 +10,7 @@ Catcher is an **experimental** library demonstrating functional Result-type erro
 
 ### Core Components
 
-1. **Result<T>**: Discriminated union type (readonly struct) containing either a success value or an exception
+1. **Result<T>**: C# 15 custom union (`[Union]` readonly struct implementing `IUnion`) with case types `T` and `Exception`. Partial struct: `ResultUnion.cs` holds the union core (constructors, state, `Value`, `HasValue`, `TryGetValue`); `Result.cs` holds chaining, matching and equality
 2. **ResultBuilder**: Static factory methods for creating Results
 3. **Catcher**: Static wrapper methods converting exceptions into Results
 4. **Unit**: Void-equivalent type for Result<Unit> chains
@@ -22,6 +22,15 @@ The Result type uses null as the discriminator:
 - `Error != null` → failure state
 
 This requires strict discipline when using the API. Never access ResultValue without checking IsSuccess first.
+
+### Union Members
+
+- One public single-parameter constructor per case type: `Result(T)` and `Result(Exception)`. These give implicit union conversions, so `Result<int> r = 42;` and `Result<int> r = ex;` work. Do not add other public single-parameter constructors; each one adds a case type.
+- `Value` returns `object?`: the `Error`, or `ResultValue` boxed. It is null for a success holding null.
+- Non-boxing access pattern: `HasValue`, `TryGetValue(out T)`, `TryGetValue(out Exception)`. The compiler uses them for type and null patterns. They must agree with `Value`: `TryGetValue(out T)` is true only for a success holding non-null; `HasValue` is `Value is not null`.
+- `default(Result<T>)` is a success holding `default(T)`.
+- The `null` literal converts to the `Exception` case. `Result(Exception)` replaces null with `ArgumentNullException` so `result == null` and `Equals(null)` stay safe.
+- `Result<Exception>` has ambiguous implicit conversions (CS0457). `Result<object>` maps an `Exception` to the failure case.
 
 ### Fail-Fast Philosophy
 
@@ -60,6 +69,8 @@ These are NOT bugs:
 
 - **Exception equality by type+message**: Ignores stack trace and inner exceptions for testability
 - **Null as discriminator**: Simpler than Tagged Union; works with C# nullability
+- **Custom union, not a `union` declaration**: A `union` declaration stores contents as `object?` and boxes value types. The custom struct keeps typed fields and the non-boxing access pattern
+- **Null exception becomes ArgumentNullException**: The `null` literal converts to the `Exception` case, so failing fast there would crash on `result == null`
 - **Fail-fast in Match/Transform**: Programming errors should crash
 - **No Try wrapper on Then/Pipe**: These catch exceptions internally; user doesn't need Try
 - **Unit type for void operations**: Enables Result<Unit> instead of Result<object>
@@ -67,7 +78,7 @@ These are NOT bugs:
 ### What This Project Demonstrates
 
 **Positive Demonstrations:**
-- How to implement discriminated unions in C#
+- How to implement a C# 15 custom union with the non-boxing access pattern
 - Functional composition with monadic bind (Then)
 - Integration with nullability analysis via MemberNotNullWhen
 - Appropriate use of fail-fast semantics
@@ -102,10 +113,11 @@ When reviewing changes:
 
 1. **Exception safety**: Verify all exceptions are caught and wrapped
 2. **Null handling**: Check MemberNotNullWhen attributes match logic
-3. **Struct semantics**: Ensure Result<T> remains readonly and value-semantic
-4. **Equality contracts**: ResultValue equality must be by value, Exception by type+message
-5. **Async patterns**: Verify Task<Result<T>> follows TAP correctly
-6. **API clarity**: Methods should have obvious success/failure semantics
+3. **Union contract**: `Value`, `HasValue` and both `TryGetValue` overloads agree for every state, including default and success-holding-null
+4. **Struct semantics**: Ensure Result<T> remains readonly and value-semantic
+5. **Equality contracts**: ResultValue equality must be by value, Exception by type+message
+6. **Async patterns**: Verify Task<Result<T>> follows TAP correctly
+7. **API clarity**: Methods should have obvious success/failure semantics
 
 ## Common Patterns
 

@@ -36,39 +36,29 @@ public static class ResultBuilder
 	public static Result<T> FromNullable<T>(T? value) where T : struct =>
 		!value.HasValue ? Failure<T>(new ArgumentNullException(nameof(value))) : Success(value.Value);
 
-	/// <summary>
-	/// Turns a nullable Result(T?) into a Result(T), if the result is null its turned into an error
-	/// eg Result(string?) -> Result(string)
-	/// </summary>
-	public static Result<T> RemoveNullable<T>(Result<T?> result) where T : class
+	extension<T>(Result<T?> result) where T : class
 	{
-		// I'd prefer these in Result<T>, but cant because of the generic constraint
-#pragma warning disable IDE0046 // Convert to conditional expression
-		if (result.IsError) {
-			return Failure<T>(result.Error!);
-		}
-#pragma warning restore IDE0046 // Convert to conditional expression
-
-		return result.ResultValue == null
-			? Failure<T>(new ArgumentNullException(nameof(result)))
-			: Success(result.ResultValue);
+		/// <summary>
+		/// Turns a nullable Result(T?) into a Result(T), if the result is null its turned into an error
+		/// eg Result(string?) -> Result(string)
+		/// </summary>
+		public Result<T> RemoveNullable() => result switch {
+			{ IsError: true } => result.Error,
+			{ ResultValue: null } => new ArgumentNullException(nameof(result)),
+			_ => result.ResultValue,
+		};
 	}
 
-	/// <summary>
-	/// Turns a nullable Result(T?) into a Result(T), if the result is null its turned into an error
-	/// eg Result(int?) -> Result(int)
-	/// </summary>
-	public static Result<T> RemoveNullable<T>(Result<T?> result) where T : struct
+	extension<T>(Result<T?> result) where T : struct
 	{
-		// I'd prefer these in Result<T>, but cant because of the generic constraint
-#pragma warning disable IDE0046 // Convert to conditional expression
-		if (result.IsError) {
-			return Failure<T>(result.Error!);
-		}
-#pragma warning restore IDE0046 // Convert to conditional expression
-
-		return !result.ResultValue.HasValue
-			? Failure<T>(new ArgumentNullException(nameof(result)))
-			: Success(result.ResultValue.Value);
+		/// <summary>
+		/// Turns a nullable Result(T?) into a Result(T), if the result is null its turned into an error
+		/// eg Result(int?) -> Result(int)
+		/// </summary>
+		public Result<T> RemoveNullable() => result switch {
+			{ IsError: true } => result.Error,
+			{ ResultValue: null } => new ArgumentNullException(nameof(result)),
+			_ => result.ResultValue.Value,
+		};
 	}
 }

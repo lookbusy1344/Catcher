@@ -14,6 +14,7 @@ Catcher is an **experimental** library demonstrating functional Result-type erro
 2. **ResultBuilder**: Static factory methods for creating Results where an implicit conversion has no target type, and for `Result<Exception>`
 3. **Catcher**: Static wrapper methods converting exceptions into Results
 4. **Unit**: Void-equivalent type for Result<Unit> chains
+5. **ResultTaskExtensions**: C# 14 extension members on `Task<Result<T>>` (`Then`, `ThenAsync`, `Match`). A null or faulted task becomes a failure
 
 ### Discriminated Union Pattern
 
@@ -44,7 +45,7 @@ When user-provided lambdas throw in Match/Switch/Transform operations, the syste
 
 - **Functional composition**: Prefer Then/Pipe/Transform chains over imperative if-else
 - **Immutability**: All types are readonly structs or records
-- **Explicit nullability**: Use FromNullable/RemoveNullable for nullable conversions
+- **Explicit nullability**: Use `ResultBuilder.FromNullable(value)` and `result.RemoveNullable()` for nullable conversions
 - **No throw in public API**: All exceptions must be caught and wrapped in Results
 
 ### Testing Strategy
@@ -152,11 +153,13 @@ return Catcher.Try(() => GetUserId())
 
 ### Async Patterns
 ```csharp
-var result = await Catcher.TryAsync(async () => await FetchDataAsync())
+// Then, ThenAsync and Match also extend Task<Result<T>>, so one await ends the chain
+string outcome = await Catcher.TryAsync(() => FetchDataAsync())
     .Then(data => ProcessData(data))
-    .Transform(
-        success => SaveToDatabase(success),
-        failure => LogFailure(failure)
+    .ThenAsync(processed => SaveToDatabaseAsync(processed))
+    .Match(
+        id => $"saved {id}",
+        ex => $"failed: {ex.Message}"
     );
 ```
 

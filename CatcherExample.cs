@@ -16,12 +16,12 @@ internal static class CatcherExample
 			.Then(contents => contents.Sum(line => line.Split(' ').Length))
 			.OnError(_ => new("Failed to count words in file"));
 
-	public static async Task<Result<int>> CountWordsInFileAsync(string fname) =>
-		(await Catcher.TryAsync(() => File.ReadAllLinesAsync(fname)))
+	public static Task<Result<int>> CountWordsInFileAsync(string fname) =>
+		Catcher.TryAsync(() => File.ReadAllLinesAsync(fname))
 		.Then(contents => contents.Sum(line => line.Split(' ').Length));
 
-	public static async Task<Result<int>> CountWordsInFile2Async(string fname) =>
-		(await Catcher.TryAsync(() => File.ReadAllLinesAsync(fname)))
+	public static Task<Result<int>> CountWordsInFile2Async(string fname) =>
+		Catcher.TryAsync(() => File.ReadAllLinesAsync(fname))
 		.Then(contents => contents.Sum(line => line.Split(' ').Length))
 		.Then(i => i switch {
 			> 1000 => ResultBuilder.Success(i),
@@ -208,6 +208,20 @@ internal static class CatcherExample
 		Assert(ReferenceEquals(bad.Transform<int>(i => i, _ => throw replacement).Error, replacement));
 		Assert(bad.Transform(i => (Result<int>)i, e => (Result<int>)e.Message.Length) == "boom".Length);
 		Assert(ReferenceEquals(ok.Transform(_ => throw replacement, e => (Result<int>)e).Error, replacement));
+
+		// RemoveNullable as an extension member, reference and value types
+		Result<string?> someString = "hi";
+		Result<string?> nullString = (string?)null;
+		Result<string?> badString = boom;
+		Assert(someString.RemoveNullable() == "hi");
+		Assert(nullString.RemoveNullable().Error is ArgumentNullException { ParamName: "result" });
+		Assert(ReferenceEquals(badString.RemoveNullable().Error, boom));
+		Result<int?> someInt = (int?)answer;
+		Result<int?> nullInt = (int?)null;
+		Result<int?> badInt = boom;
+		Assert(someInt.RemoveNullable() == answer);
+		Assert(nullInt.RemoveNullable().Error is ArgumentNullException { ParamName: "result" });
+		Assert(ReferenceEquals(badInt.RemoveNullable().Error, boom));
 	}
 
 	public static async Task CheckAsync()
@@ -230,6 +244,27 @@ internal static class CatcherExample
 		Assert(ReferenceEquals((await bad.ThenAsync(i => Task.FromResult((Result<int>)(i + 1)))).Error, boom));
 		Assert(ReferenceEquals((await ok.ThenAsync(_ => Task.FromException<Result<int>>(boom))).Error, boom));
 		Assert((await ok.ThenAsync((Func<int, Task<Result<int>>>)null!)).Error is ArgumentNullException { ParamName: "func" });
+
+		// chaining directly on Task<Result<T>>
+		var okTask = Task.FromResult(ok);
+		var badTask = Task.FromResult(bad);
+		Assert(await okTask.Then(i => i + 1) == answer + 1);
+		Assert(ReferenceEquals((await badTask.Then(i => i + 1)).Error, boom));
+		Assert(ReferenceEquals((await okTask.Then<int, int>(_ => throw boom)).Error, boom));
+		Assert(await okTask.Then(i => (Result<int>)(i + 1)) == answer + 1);
+		Assert(ReferenceEquals((await okTask.Then(_ => (Result<int>)boom)).Error, boom));
+		Assert(await okTask.ThenAsync(i => Task.FromResult(i + 1)) == answer + 1);
+		Assert(await okTask.ThenAsync(i => Task.FromResult((Result<int>)(i + 1))) == answer + 1);
+		Assert(ReferenceEquals((await badTask.ThenAsync(i => Task.FromResult(i + 1))).Error, boom));
+		Assert(await okTask.Match(i => i + 1, _ => -1) == answer + 1);
+		Assert(await badTask.Match(i => i + 1, _ => -1) == -1);
+		Assert(await Catcher.TryAsync(() => Task.FromResult(answer)).Then(i => i + 1).ThenAsync(i => Task.FromResult(i * 2))
+			== (answer + 1) * 2);
+
+		// a faulted or null task becomes a failure
+		Assert(ReferenceEquals((await Task.FromException<Result<int>>(boom).Then(i => i + 1)).Error, boom));
+		Assert((await ((Task<Result<int>>)null!).Then(i => i + 1)).Error is ArgumentNullException { ParamName: "task" });
+		Assert(await ((Task<Result<int>>)null!).Match(_ => "ok", e => e.GetType().Name) == nameof(ArgumentNullException));
 	}
 
 	public static void Go()
@@ -251,11 +286,11 @@ internal static class CatcherExample
 
 		// turn a Result<string?> into a Result<string>
 		var stringResult1 = Catcher.Try(() => (string?)"hello");
-		var stringResult2 = ResultBuilder.RemoveNullable(stringResult1);
+		var stringResult2 = stringResult1.RemoveNullable();
 
 		// turn a Result<int?> into a Result<int>
 		var intResult1 = Catcher.Try(() => (int?)3);
-		var intResult2 = ResultBuilder.RemoveNullable(intResult1);
+		var intResult2 = intResult1.RemoveNullable();
 
 		// now turn a Result<int> into a Result<decimal> using Pipe
 		var decimalResult = intResult2.Pipe<decimal>(i =>

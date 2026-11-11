@@ -254,10 +254,12 @@ valuec.Switch(
 Build a function that results a `Task<Result<T>>` instead of `Task<T>`. If there is no return value, use `Task<Result<Unit>>` instead of `Task`.
 
 ```
-public static async Task<Result<int>> CountWordsInFileAsync(string fname) =>
-	(await Catcher.TryAsync(() => File.ReadAllLinesAsync(fname)))
+public static Task<Result<int>> CountWordsInFileAsync(string fname) =>
+	Catcher.TryAsync(() => File.ReadAllLinesAsync(fname))
 		.Then(contents => contents.Sum(line => line.Split(' ').Length));
 ```
+
+`Then()`, `ThenAsync()` and `Match()` also extend `Task<Result<T>>` (C# 14 extension members), so an async chain needs one `await` at the end. A null or faulted task becomes a failure.
 
 And used like this:
 
@@ -277,5 +279,6 @@ bool success = words.IsSuccess;   // true if it worked
 
 ```
 Result<User> user = await userId.ThenAsync(id => LoadUserAsync(id));
+string name = await userId.ThenAsync(id => LoadUserAsync(id)).Then(u => u.Name).Match(n => n, _ => "unknown");
 Result<User> checkedUser = await userId.ThenAsync(id => FindUserAsync(id));   // returns Task<Result<User>>
 ```

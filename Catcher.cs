@@ -11,7 +11,7 @@ public static class Catcher
 	public static Result<Unit> Try(Action action)
 	{
 		if (action == null) {
-			return ResultBuilder.Failure<Unit>(new ArgumentNullException(nameof(action)));
+			return new ArgumentNullException(nameof(action));
 		}
 
 		try {
@@ -19,7 +19,7 @@ public static class Catcher
 			return ResultBuilder.SuccessUnit;
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<Unit>(ex);
+			return ex;
 		}
 	}
 
@@ -32,7 +32,7 @@ public static class Catcher
 	public static Result<Unit> Try<T>(Action<T> action, T param1)
 	{
 		if (action == null) {
-			return ResultBuilder.Failure<Unit>(new ArgumentNullException(nameof(action)));
+			return new ArgumentNullException(nameof(action));
 		}
 
 		try {
@@ -40,7 +40,7 @@ public static class Catcher
 			return ResultBuilder.SuccessUnit;
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<Unit>(ex);
+			return ex;
 		}
 	}
 
@@ -52,14 +52,14 @@ public static class Catcher
 	public static Result<Out> Try<Out>(Func<Out> func)
 	{
 		if (func == null) {
-			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
+			return new ArgumentNullException(nameof(func));
 		}
 
 		try {
-			return ResultBuilder.Success(func());
+			return func();
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<Out>(ex);
+			return ex;
 		}
 	}
 
@@ -71,14 +71,14 @@ public static class Catcher
 	public static Result<Out> Call<Out>(Func<Result<Out>> func)
 	{
 		if (func == null) {
-			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
+			return new ArgumentNullException(nameof(func));
 		}
 
 		try {
 			return func();
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<Out>(ex);
+			return ex;
 		}
 	}
 
@@ -92,14 +92,14 @@ public static class Catcher
 	public static Result<Out> Try<In, Out>(Func<In, Out> func, In param1)
 	{
 		if (func == null) {
-			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
+			return new ArgumentNullException(nameof(func));
 		}
 
 		try {
-			return ResultBuilder.Success(func(param1));
+			return func(param1);
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<Out>(ex);
+			return ex;
 		}
 	}
 
@@ -109,7 +109,7 @@ public static class Catcher
 	public static async Task<Result<Unit>> TryAsync(Func<Task> func)
 	{
 		if (func == null) {
-			return ResultBuilder.Failure<Unit>(new ArgumentNullException(nameof(func)));
+			return new ArgumentNullException(nameof(func));
 		}
 
 		try {
@@ -117,7 +117,7 @@ public static class Catcher
 			return ResultBuilder.SuccessUnit; // all returns are wrapped in a Task
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<Unit>(ex);
+			return ex;
 		}
 	}
 
@@ -127,14 +127,14 @@ public static class Catcher
 	public static async Task<Result<Out>> TryAsync<Out>(Func<Task<Out>> func)
 	{
 		if (func == null) {
-			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
+			return new ArgumentNullException(nameof(func));
 		}
 
 		try {
-			return ResultBuilder.Success(await func()); // all returns are wrapped in a Task
+			return await func(); // all returns are wrapped in a Task
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<Out>(ex);
+			return ex;
 		}
 	}
 
@@ -144,14 +144,14 @@ public static class Catcher
 	public static async Task<Result<Out>> TryAsync<In, Out>(Func<In, Task<Out>> func, In param1)
 	{
 		if (func == null) {
-			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
+			return new ArgumentNullException(nameof(func));
 		}
 
 		try {
-			return ResultBuilder.Success(await func(param1)); // all returns are wrapped in a Task
+			return await func(param1); // all returns are wrapped in a Task
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<Out>(ex);
+			return ex;
 		}
 	}
 
@@ -161,14 +161,14 @@ public static class Catcher
 	public static async Task<Result<Out>> CallAsync<Out>(Func<Task<Result<Out>>> func)
 	{
 		if (func == null) {
-			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
+			return new ArgumentNullException(nameof(func));
 		}
 
 		try {
 			return await func();
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<Out>(ex);
+			return ex;
 		}
 	}
 }

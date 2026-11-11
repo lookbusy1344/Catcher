@@ -1,6 +1,7 @@
 namespace Catcher;
 
 using System;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 
 #pragma warning disable IDE0059 // Unnecessary assignment of a value
@@ -150,6 +151,65 @@ internal static class CatcherExample
 		};
 	}
 
+	public static void CheckChaining()
+	{
+		const int answer = 42;
+		var boom = new InvalidOperationException("boom");
+		var replacement = new FormatException("replaced");
+		Result<int> ok = answer;
+		Result<int> bad = boom;
+
+		// Catcher entry points
+		Assert(Catcher.Try(() => answer) == answer);
+		Assert(ReferenceEquals(Catcher.Try<int>(() => throw boom).Error, boom));
+		Assert(Catcher.Try((Func<int>)null!).Error is ArgumentNullException { ParamName: "func" });
+		Assert(Catcher.Try(() => { }).IsSuccess);
+		Assert(Catcher.Try((Action)null!).Error is ArgumentNullException { ParamName: "action" });
+		Assert(ReferenceEquals(Catcher.Try(() => throw boom).Error, boom));
+		Assert(Catcher.Try((int i) => i + 1, answer) == answer + 1);
+		Assert(ReferenceEquals(Catcher.Call<int>(() => boom).Error, boom));
+		Assert(ReferenceEquals(Catcher.Call<int>(() => throw boom).Error, boom));
+
+		// Then: success maps, failure passes through by reference, throws and null delegates become failures
+		Assert(ok.Then(i => i.ToString(CultureInfo.InvariantCulture)) == "42");
+		Assert(ReferenceEquals(bad.Then(i => i + 1).Error, boom));
+		Assert(ReferenceEquals(ok.Then<int>(_ => throw boom).Error, boom));
+		Assert(ok.Then((Func<int, int>)null!).Error is ArgumentNullException { ParamName: "func" });
+		Assert(ok.Then(i => (Result<int>)(i + 1)) == answer + 1);
+		Assert(ReferenceEquals(ok.Then(_ => (Result<int>)boom).Error, boom));
+		Assert(ReferenceEquals(bad.Then(i => (Result<int>)(i + 1)).Error, boom));
+		Assert(ok.Then((Func<int, Result<int>>)null!).Error is ArgumentNullException { ParamName: "func" });
+		var seen = 0;
+		Assert(ok.Then(i => { seen = i; }).IsSuccess && seen == answer);
+		Assert(ReferenceEquals(bad.Then(_ => { }).Error, boom));
+		Assert(ok.Then((Action<int>)null!).Error is ArgumentNullException { ParamName: "action" });
+
+		// Pipe passes the whole Result
+		Assert(bad.Pipe(r => (Result<bool>)r.IsError) == true);
+		Assert(ReferenceEquals(ok.Pipe<int>(_ => throw boom).Error, boom));
+		Assert(ok.Pipe((Func<Result<int>, Result<int>>)null!).Error is ArgumentNullException { ParamName: "func" });
+
+		// OnError: success passes through, failure recovers or replaces
+		Assert(ok.OnError(_ => -1) == answer);
+		Assert(bad.OnError(_ => -1) == -1);
+		Assert(bad.OnError((Func<Exception, int>)null!).Error is ArgumentNullException { ParamName: "func" });
+		Assert(bad.OnError(_ => (Result<int>)(-1)) == -1);
+		Assert(ReferenceEquals(bad.OnError((Func<Exception, Result<int>>)(_ => throw replacement)).Error, replacement));
+		Assert(ReferenceEquals(bad.OnError(replacement).Error, replacement));
+		Assert(ok.OnError(replacement) == answer);
+		Assert(bad.OnError((Exception)null!).Error is ArgumentNullException { ParamName: "exception" });
+		Assert(ReferenceEquals(bad.OnError(_ => (Exception)replacement).Error, replacement));
+		Assert(ReferenceEquals(bad.OnError((Func<Exception, Exception>)(_ => throw replacement)).Error, replacement));
+		Assert(bad.OnError((Func<Exception, Exception>)null!).Error is ArgumentNullException { ParamName: "func" });
+
+		// Transform: both states map to a success, throws become failures
+		Assert(ok.Transform(i => i + 1, _ => -1) == answer + 1);
+		Assert(bad.Transform(i => i + 1, _ => -1) == -1);
+		Assert(ReferenceEquals(bad.Transform<int>(i => i, _ => throw replacement).Error, replacement));
+		Assert(bad.Transform(i => (Result<int>)i, e => (Result<int>)e.Message.Length) == "boom".Length);
+		Assert(ReferenceEquals(ok.Transform(_ => throw replacement, e => (Result<int>)e).Error, replacement));
+	}
+
 	public static void Go()
 	{
 		var s = "hello";
@@ -176,8 +236,8 @@ internal static class CatcherExample
 		var intResult2 = ResultBuilder.RemoveNullable(intResult1);
 
 		// now turn a Result<int> into a Result<decimal> using Pipe
-		var decimalResult = intResult2.Pipe(i =>
-			i.IsSuccess ? ResultBuilder.Success((decimal)i.ResultValue) : ResultBuilder.Failure<decimal>(i.Error));
+		var decimalResult = intResult2.Pipe<decimal>(i =>
+			i.IsSuccess ? (decimal)i.ResultValue : i.Error);
 
 		// ======
 

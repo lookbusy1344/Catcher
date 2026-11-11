@@ -9,6 +9,7 @@ internal static class Program
 	{
 		CatcherExample.CheckEquality();
 		CatcherExample.CheckUnion();
+		CatcherExample.CheckChaining();
 
 		return CatcherExample.GoAsync();
 	}

@@ -11,7 +11,7 @@ Catcher is an **experimental** library demonstrating functional Result-type erro
 ### Core Components
 
 1. **Result<T>**: C# 15 custom union (`[Union]` readonly struct implementing `IUnion`) with case types `T` and `Exception`. Partial struct: `ResultUnion.cs` holds the union core (constructors, state, `Value`, `HasValue`, `TryGetValue`); `Result.cs` holds chaining, matching and equality
-2. **ResultBuilder**: Static factory methods for creating Results
+2. **ResultBuilder**: Static factory methods for creating Results where an implicit conversion has no target type, and for `Result<Exception>`
 3. **Catcher**: Static wrapper methods converting exceptions into Results
 4. **Unit**: Void-equivalent type for Result<Unit> chains
 
@@ -50,6 +50,7 @@ When user-provided lambdas throw in Match/Switch/Transform operations, the syste
 ### Testing Strategy
 
 Given the experimental nature, tests are integrated into CatcherExample.cs:
+- `CheckEquality`, `CheckUnion` and `CheckChaining` run from `Main` and throw on the first failed assertion
 - Test both success and failure paths
 - Validate equality semantics
 - Demonstrate composition patterns
@@ -58,7 +59,7 @@ Given the experimental nature, tests are integrated into CatcherExample.cs:
 ### When Modifying This Project
 
 1. **Adding new methods**: All public methods must return Result<T> or Task<Result<T>>
-2. **Exception handling**: Catch at entry points only; use Catcher.Try() for wrapping
+2. **Exception handling**: Catch at entry points only; use Catcher.Try() for wrapping. Return values and exceptions directly; the union conversions build the Result. Avoid capturing lambdas on hot paths
 3. **Null checks**: Every public method validates inputs before use
 4. **Compiler attributes**: Use MemberNotNullWhen to guide nullability analysis
 5. **Struct semantics**: Result<T> must remain a readonly struct for efficiency
@@ -123,11 +124,15 @@ When reviewing changes:
 
 ### Creating Results
 ```csharp
-// From value
-var success = ResultBuilder.Success(42);
+// From value or exception, by implicit union conversion
+Result<int> success = 42;
+Result<int> failure = new InvalidOperationException("error");
 
-// From exception
-var failure = ResultBuilder.Failure<int>(new Exception("error"));
+// Inside a method returning Result<T>, return the value or exception directly
+return new ArgumentNullException(nameof(func));
+
+// Without a target type
+var built = ResultBuilder.Success(42);
 
 // Wrapping throws
 var result = Catcher.Try(() => int.Parse("abc"));

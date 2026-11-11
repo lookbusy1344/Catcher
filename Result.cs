@@ -109,8 +109,8 @@ public readonly partial struct Result<In> : IEquatable<Result<In>>
 				return IsSuccess ? success(ResultValue) : failure(Error);
 			}
 			catch (Exception ex) {
-				// the failure handler threw an exception, so return it as a failure Result<R>
-				return ResultBuilder.Failure<Out>(ex);
+				// a handler threw, so return it as a failure
+				return ex;
 			}
 		}
 		catch (Exception ex) {
@@ -123,73 +123,47 @@ public readonly partial struct Result<In> : IEquatable<Result<In>>
 	/// <summary>
 	/// On success, chain an Action that takes the result as a parameter
 	/// </summary>
-	public Result<Unit> Then(Action<In> action)
-	{
-		// if we receive a failure, just return it
-#pragma warning disable IDE0046 // Convert to conditional expression
-		if (IsError) {
-			return ResultBuilder.Failure<Unit>(Error);
-		}
-#pragma warning restore IDE0046 // Convert to conditional expression
-
-		return action == null
-			? ResultBuilder.Failure<Unit>(new ArgumentNullException(nameof(action)))
-			: Catcher.Try(action, ResultValue);
-	}
+	public Result<Unit> Then(Action<In> action) => action switch {
+		_ when IsError => Error,
+		null => new ArgumentNullException(nameof(action)),
+		_ => Catcher.Try(action, ResultValue),
+	};
 
 	/// <summary>
 	/// On success, chain an Func that takes the result as a parameter, and returns Out
 	/// </summary>
-	public Result<Out> Then<Out>(Func<In, Out> func)
-	{
-		// if we receive a failure, just return it
-#pragma warning disable IDE0046 // Convert to conditional expression
-		if (IsError) {
-			return ResultBuilder.Failure<Out>(Error);
-		}
-#pragma warning restore IDE0046 // Convert to conditional expression
-
-		return func == null
-			? ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)))
-			: Catcher.Try(func, ResultValue);
-	}
+	public Result<Out> Then<Out>(Func<In, Out> func) => func switch {
+		_ when IsError => Error,
+		null => new ArgumentNullException(nameof(func)),
+		_ => Catcher.Try(func, ResultValue),
+	};
 
 	/// <summary>
 	/// On success, chain an Func that takes the result as a parameter, and returns Result(Out) directly
 	/// </summary>
 	public Result<Out> Then<Out>(Func<In, Result<Out>> func)
 	{
-		// if we receive a failure, just return it
 		if (IsError) {
-			return ResultBuilder.Failure<Out>(Error);
+			return Error;
 		}
 
 		if (func == null) {
-			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
+			return new ArgumentNullException(nameof(func));
 		}
 
 		try {
-			// the worker function returns a Result<Out> directly
 			return func(ResultValue);
 		}
 		catch (Exception ex) {
-			// any exceptions, we catch and return as a failure
-			return ResultBuilder.Failure<Out>(ex);
+			return ex;
 		}
 	}
 
-	public async Task<Result<Out>> ThenAsync<Out>(Func<Task<Out>> func)
-	{
-#pragma warning disable IDE0046 // Convert to conditional expression
-		if (IsError) {
-			return ResultBuilder.Failure<Out>(Error);
-		}
-#pragma warning restore IDE0046 // Convert to conditional expression
-
-		return func == null
-			? ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)))
-			: await Catcher.TryAsync(func);
-	}
+	public async Task<Result<Out>> ThenAsync<Out>(Func<Task<Out>> func) => func switch {
+		_ when IsError => Error,
+		null => new ArgumentNullException(nameof(func)),
+		_ => await Catcher.TryAsync(func),
+	};
 
 	/// <summary>
 	/// Pipe the current Result(In) and convert it into Result(Out)
@@ -200,33 +174,25 @@ public readonly partial struct Result<In> : IEquatable<Result<In>>
 	public Result<Out> Pipe<Out>(Func<Result<In>, Result<Out>> func)
 	{
 		if (func == null) {
-			return ResultBuilder.Failure<Out>(new ArgumentNullException(nameof(func)));
+			return new ArgumentNullException(nameof(func));
 		}
 
 		try {
 			return func(this);
 		}
 		catch (Exception ex) {
-			// any exceptions, we catch and return as a failure
-			return ResultBuilder.Failure<Out>(ex);
+			return ex;
 		}
 	}
 
 	/// <summary>
 	/// On failure, chain an Func that takes the error as a parameter, and returns In without changing the chain type
 	/// </summary>
-	public Result<In> OnError(Func<Exception, In> func)
-	{
-#pragma warning disable IDE0046 // Convert to conditional expression
-		if (IsSuccess) {
-			return this;
-		}
-#pragma warning restore IDE0046 // Convert to conditional expression
-
-		return func == null
-			? ResultBuilder.Failure<In>(new ArgumentNullException(nameof(func)))
-			: Catcher.Try(func, Error);
-	}
+	public Result<In> OnError(Func<Exception, In> func) => func switch {
+		_ when IsSuccess => this,
+		null => new ArgumentNullException(nameof(func)),
+		_ => Catcher.Try(func, Error),
+	};
 
 	/// <summary>
 	/// On failure, chain an Func that takes the error as a parameter, and returns Result(In) without changing the chain type
@@ -238,14 +204,14 @@ public readonly partial struct Result<In> : IEquatable<Result<In>>
 		}
 
 		if (func == null) {
-			return ResultBuilder.Failure<In>(new ArgumentNullException(nameof(func)));
+			return new ArgumentNullException(nameof(func));
 		}
 
 		try {
 			return func(Error);
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<In>(ex);
+			return ex;
 		}
 	}
 
@@ -253,7 +219,7 @@ public readonly partial struct Result<In> : IEquatable<Result<In>>
 	/// On failure, replace the error with a new error
 	/// </summary>
 	public Result<In> OnError(Exception exception) =>
-		IsSuccess ? this : ResultBuilder.Failure<In>(exception ?? new ArgumentNullException(nameof(exception)));
+		IsSuccess ? this : exception ?? new ArgumentNullException(nameof(exception));
 
 	/// <summary>
 	/// On failure, chain an Func that takes the error as a parameter, and replaces it with another error
@@ -265,14 +231,14 @@ public readonly partial struct Result<In> : IEquatable<Result<In>>
 		}
 
 		if (func == null) {
-			return ResultBuilder.Failure<In>(new ArgumentNullException(nameof(func)));
+			return new ArgumentNullException(nameof(func));
 		}
 
 		try {
-			return ResultBuilder.Failure<In>(func(Error));
+			return func(Error);
 		}
 		catch (Exception ex) {
-			return ResultBuilder.Failure<In>(ex);
+			return ex;
 		}
 	}
 

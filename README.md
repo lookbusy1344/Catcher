@@ -97,15 +97,17 @@ Task<Result<Unit>> awaitableresult2 = Catcher.TryAsync(() => DoWorkAsync());	// 
 
 ### Call() and CallAsync()
 
-The `Call()` methods call the lambda which returns `Result<T>` directly. Errors can be signalled without throwing by using `ResultBuilder.Failure<T>()`. Any thrown exceptions behave like `Try()`, they are caught and returned.
+The `Call()` methods call the lambda which returns `Result<T>` directly. Errors can be signalled without throwing by returning the exception, which converts to a failure. Any thrown exceptions behave like `Try()`, they are caught and returned.
 
 ```
 // signal success
-Result<int> result = Catcher.Call(() => ResultBuilder.Success(1));
+Result<int> result = Catcher.Call<int>(() => 1);
 
 // signal an error without throwing
-Result<int> result = Catcher.Call(() => ResultBuilder.Failure<int>(err));
+Result<int> result = Catcher.Call<int>(() => err);
 ```
+
+`ResultBuilder.Success()` and `ResultBuilder.Failure<T>()` build the same values where a conversion has no target type.
 
 ## Chaining calls
 
@@ -166,8 +168,8 @@ This `Pipe()` example turns a `Result<int>` into a `Result<decimal>`. Here the *
 Failures can be signalled **without** throwing, so this is particularly useful when writing exception-free code
 
 ```
-Result<decimal> dec = result.Pipe(ires =>
-	ires.IsSuccess ? ResultBuilder.Success((decimal)ires.ResultValue) : ResultBuilder.Failure<decimal>(ires.Error));
+Result<decimal> dec = result.Pipe<decimal>(ires =>
+	ires.IsSuccess ? (decimal)ires.ResultValue : ires.Error);
 ```
 
 ## Ending a chain

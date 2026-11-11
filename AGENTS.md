@@ -43,7 +43,7 @@ When user-provided lambdas throw in Match/Switch/Transform operations, the syste
 
 ### Code Style
 
-- **Functional composition**: Prefer Then/Pipe/Transform chains over imperative if-else
+- **Functional composition**: Prefer Then/Pipe/Transform chains over imperative if-else. End a chain with a `switch` expression, or with Match/Switch where a throwing handler must fail fast
 - **Immutability**: All types are readonly structs or records
 - **Explicit nullability**: Use `ResultBuilder.FromNullable(value)` and `result.RemoveNullable()` for nullable conversions
 - **No throw in public API**: All exceptions must be caught and wrapped in Results

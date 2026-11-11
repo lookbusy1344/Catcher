@@ -174,7 +174,7 @@ Result<decimal> dec = result.Pipe<decimal>(ires =>
 
 ## Ending a chain
 
-Finally call `.Unwrap()`, `.Match()` or `.Switch()` to handle the result. These all fail-fast if something goes wrong.
+Finally call `.Unwrap()`, `.Match()` or `.Switch()` to handle the result, or use a `switch` expression. The methods fail fast if something goes wrong.
 `.MatchDefault()` is also available, which returns a default value if Result cannot be unwrapped.
 
 ### Unwrap()
@@ -214,6 +214,25 @@ result.Switch(
 );
 
 ```
+
+### switch expression
+
+`Result<T>` is a union, so a `switch` expression can end a chain directly:
+
+```
+string text = result switch {
+	int i => $"ok {i}",
+	Exception e => $"error {e.Message}",
+};
+```
+
+`switch` and `Match()` differ:
+
+- The compiler checks a `switch` for exhaustiveness. For a nullable `T`, such as `Result<string?>`, it requires a `null` arm. A success holding `null` matches that arm, not the `T` arm.
+- An exception thrown in a `switch` arm propagates to the caller. An exception thrown in a `Match()` or `Switch()` lambda fails fast.
+- `switch` allocates no delegates. `Match()` takes two delegates, which allocate when the lambdas capture.
+
+Use `switch` for local handling. Use `Match()` or `Switch()` when a throwing handler must stop the process.
 
 ## More examples
 

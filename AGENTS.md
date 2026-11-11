@@ -54,7 +54,7 @@ Given the experimental nature, tests are integrated into CatcherExample.cs:
 - Test both success and failure paths
 - Validate equality semantics
 - Demonstrate composition patterns
-- Show async/await integration
+- Show async/await integration (`CheckAsync`)
 
 ### When Modifying This Project
 

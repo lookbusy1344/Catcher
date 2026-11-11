@@ -272,3 +272,10 @@ words.Switch(
 
 bool success = words.IsSuccess;   // true if it worked
 ```
+
+`ThenAsync()` chains an async step. The lambda takes the success value and returns `Task<Out>`, or `Task<Result<Out>>` to signal failure without throwing. Failures pass through without calling the lambda.
+
+```
+Result<User> user = await userId.ThenAsync(id => LoadUserAsync(id));
+Result<User> checkedUser = await userId.ThenAsync(id => FindUserAsync(id));   // returns Task<Result<User>>
+```

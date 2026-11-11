@@ -210,6 +210,28 @@ internal static class CatcherExample
 		Assert(ReferenceEquals(ok.Transform(_ => throw replacement, e => (Result<int>)e).Error, replacement));
 	}
 
+	public static async Task CheckAsync()
+	{
+		const int answer = 42;
+		var boom = new InvalidOperationException("boom");
+		Result<int> ok = answer;
+		Result<int> bad = boom;
+
+		// ThenAsync passes the value on, failures pass through by reference
+		Assert(await ok.ThenAsync(i => Task.FromResult(i + 1)) == answer + 1);
+		Assert(ReferenceEquals((await bad.ThenAsync(i => Task.FromResult(i + 1))).Error, boom));
+		Assert(ReferenceEquals((await ok.ThenAsync<int>(_ => Task.FromException<int>(boom))).Error, boom));
+		Assert(ReferenceEquals((await ok.ThenAsync<int>(_ => throw boom)).Error, boom));
+		Assert((await ok.ThenAsync((Func<int, Task<int>>)null!)).Error is ArgumentNullException { ParamName: "func" });
+
+		// ThenAsync returning Result directly
+		Assert(await ok.ThenAsync(i => Task.FromResult((Result<int>)(i + 1))) == answer + 1);
+		Assert(ReferenceEquals((await ok.ThenAsync(_ => Task.FromResult((Result<int>)boom))).Error, boom));
+		Assert(ReferenceEquals((await bad.ThenAsync(i => Task.FromResult((Result<int>)(i + 1)))).Error, boom));
+		Assert(ReferenceEquals((await ok.ThenAsync(_ => Task.FromException<Result<int>>(boom))).Error, boom));
+		Assert((await ok.ThenAsync((Func<int, Task<Result<int>>>)null!)).Error is ArgumentNullException { ParamName: "func" });
+	}
+
 	public static void Go()
 	{
 		var s = "hello";

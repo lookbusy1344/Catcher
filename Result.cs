@@ -159,11 +159,35 @@ public readonly partial struct Result<In> : IEquatable<Result<In>>
 		}
 	}
 
-	public async Task<Result<Out>> ThenAsync<Out>(Func<Task<Out>> func) => func switch {
+	/// <summary>
+	/// On success, chain an async Func that takes the result as a parameter, and returns Out
+	/// </summary>
+	public async Task<Result<Out>> ThenAsync<Out>(Func<In, Task<Out>> func) => func switch {
 		_ when IsError => Error,
 		null => new ArgumentNullException(nameof(func)),
-		_ => await Catcher.TryAsync(func),
+		_ => await Catcher.TryAsync(func, ResultValue),
 	};
+
+	/// <summary>
+	/// On success, chain an async Func that takes the result as a parameter, and returns Result(Out) directly
+	/// </summary>
+	public async Task<Result<Out>> ThenAsync<Out>(Func<In, Task<Result<Out>>> func)
+	{
+		if (IsError) {
+			return Error;
+		}
+
+		if (func == null) {
+			return new ArgumentNullException(nameof(func));
+		}
+
+		try {
+			return await func(ResultValue);
+		}
+		catch (Exception ex) {
+			return ex;
+		}
+	}
 
 	/// <summary>
 	/// Pipe the current Result(In) and convert it into Result(Out)

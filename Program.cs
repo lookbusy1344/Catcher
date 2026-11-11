@@ -1,17 +1,15 @@
-﻿namespace Catcher;
+namespace Catcher;
 
 internal static class Program
 {
 	public const string FileName = "CatcherExample.cs";
-	public const string WordsFile = @"wordcount.txt";
+	public const string WordsFile = "wordcount.txt";
 
-#pragma warning disable IDE0022 // Use expression body for method
-
-	private static async Task Main()
+	private static Task Main()
 	{
 		CatcherExample.CheckEquality();
 
-		await CatcherExample.GoAsync();
+		return CatcherExample.GoAsync();
 	}
 
 	//private static void Main(string[] args)

@@ -1,4 +1,4 @@
-﻿namespace Catcher;
+namespace Catcher;
 
 using System;
 
@@ -119,11 +119,11 @@ internal static class CatcherExample
 		//======
 
 		var work = Catcher.Try(() => {
-				// this returns long, and starts a chain with Result<long>
-				Console.WriteLine("Step 1");
-				var file = new FileInfo(Program.FileName);
-				return !file.Exists ? throw new FileNotFoundException($"Database file \"{file.FullName}\" not found.") : file.Length;
-			})
+			// this returns long, and starts a chain with Result<long>
+			Console.WriteLine("Step 1");
+			var file = new FileInfo(Program.FileName);
+			return !file.Exists ? throw new FileNotFoundException($"Database file \"{file.FullName}\" not found.") : file.Length;
+		})
 			.Then(length => {
 				// chaining long -> Result<long>
 				Console.WriteLine("Step 2");

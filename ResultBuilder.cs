@@ -1,4 +1,4 @@
-﻿namespace Catcher;
+namespace Catcher;
 
 /// <summary>
 /// Helpers to build results

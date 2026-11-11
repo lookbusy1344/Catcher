@@ -1,4 +1,4 @@
-﻿namespace Catcher;
+namespace Catcher;
 
 #pragma warning disable CA1815, CA2231, CA1066 // Equals and operator equals on value types
 using System.Diagnostics.CodeAnalysis;

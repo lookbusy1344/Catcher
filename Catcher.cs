@@ -1,4 +1,4 @@
-﻿namespace Catcher;
+namespace Catcher;
 
 /// <summary>
 /// Wraps Action or Func to catch exceptions and return them

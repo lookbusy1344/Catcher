@@ -61,14 +61,14 @@ The struct stores `T` and `Exception` in typed fields. It implements the non-box
 
 Null rules:
 
-- `Error` is the discriminator. A success may hold `null`. `IsSuccess` is then true, `HasValue` is false, and the `null` pattern matches. For a nullable `T` such as `Result<string?>`, the compiler requires a `null` arm.
-- `default(Result<T>)` is a success holding `default(T)`.
+- A success may hold `null`. `IsSuccess` is then true, `HasValue` is false, and the `null` pattern matches. For a nullable `T` such as `Result<string?>`, the compiler requires a `null` arm.
+- `default(Result<T>)` is a failure holding an `InvalidOperationException`, so a switch over `T` and `Exception` covers it.
 - The `null` literal converts to the `Exception` case. A null exception becomes a failure holding `ArgumentNullException`, so `result == null` is false and does not crash.
 
 Limits:
 
 - With `Result<Exception>`, both case types are `Exception`. The implicit conversion is ambiguous (CS0457), so build these with `ResultBuilder`.
-- With `Result<object>`, an `Exception` converts to the failure case. A success holding an `Exception` matches `object`, not `Exception`. Test `IsError` instead.
+- An `Exception` is always the failure case. `Result<object> r = (object)ex` and `ResultBuilder.Success<object>(ex)` are failures, so `r is Exception` and `r is ArgumentException` agree with `r.Value`.
 
 ## Traditional vs Catcher call signatures
 

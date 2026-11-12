@@ -121,11 +121,41 @@ internal static class CatcherExample
 		Assert(someInt.TryGetValue(out int? someValue) && someValue == five);
 		Assert(someInt is int unwrapped && unwrapped == five);
 
-		// default is a success holding default(T)
+		// default is a failure, so an exhaustive switch over the case types covers it
+		const string uninitialized = "Result is uninitialized";
 		Result<int> zero = default;
-		Assert(zero.IsSuccess && zero.HasValue);
-		Assert(zero.TryGetValue(out int zeroValue) && zeroValue == 0);
-		Assert(zero.Value is int boxedZero && boxedZero == 0);
+		Assert(zero.IsError && !zero.IsSuccess && zero.HasValue);
+		Assert(zero.Error is InvalidOperationException { Message: uninitialized });
+		Assert(!zero.TryGetValue(out int _));
+		Assert(zero.TryGetValue(out Exception? zeroError) && zeroError is InvalidOperationException);
+		Assert(zero.Value is InvalidOperationException);
+		Assert(Describe(zero) == $"error {uninitialized}");
+		Assert(DescribeString(default) == $"error {uninitialized}");
+		Assert(default(Result<int>) == default(Result<int>));
+		Assert(zero != ResultBuilder.Success(0));
+		Assert(ResultBuilder.Success(0).IsSuccess);
+		Assert(ReferenceEquals(zero.Then(i => i + 1).Error, zero.Error));
+
+		// overlapping case types: an Exception is always the failure case, and patterns agree with Value
+		var argument = new ArgumentException("arg");
+		Result<object> routed = ResultBuilder.Success<object>(argument);
+		Assert(routed.IsError && ReferenceEquals(routed.Error, argument));
+		Assert(routed == ResultBuilder.Failure<object>(argument));
+		Assert(ok.Then(_ => (object)argument).IsError);
+		Assert(Catcher.Try(() => (object)argument).IsError);
+		Result<object> objectFailure = argument;
+		Assert(objectFailure is Exception);
+		Assert(objectFailure is ArgumentException boundArgument && ReferenceEquals(boundArgument, argument));
+		Assert(objectFailure is object);
+		Assert(objectFailure is not string);
+		Assert(objectFailure.TryGetValue(out object? boundObject) && ReferenceEquals(boundObject, argument));
+		Result<object> objectSuccess = "text";
+		Assert(objectSuccess is string && objectSuccess is not Exception && objectSuccess is not ArgumentException);
+		Result<System.Runtime.Serialization.ISerializable> serializable = argument;
+		Assert(serializable.TryGetValue(out System.Runtime.Serialization.ISerializable? boundSerializable)
+			&& ReferenceEquals(boundSerializable, argument));
+		Assert(!bad.TryGetValue(out int _));
+		Assert(!ResultBuilder.Failure<string>(exception).TryGetValue(out string? _));
 
 		// equality through union conversion, and Equals(object) on unrelated types
 		Assert(ok == answer);
@@ -141,6 +171,11 @@ internal static class CatcherExample
 
 		static string Describe(Result<int> result) => result switch {
 			int i => $"ok {i}",
+			Exception e => $"error {e.Message}",
+		};
+
+		static string DescribeString(Result<string> result) => result switch {
+			string s => $"ok {s}",
 			Exception e => $"error {e.Message}",
 		};
 

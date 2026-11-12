@@ -18,9 +18,10 @@ Catcher is an **experimental** library demonstrating functional Result-type erro
 
 ### Discriminated Union Pattern
 
-The Result type uses null as the discriminator:
-- `Error == null` → success state (even if ResultValue is null)
-- `Error != null` → failure state
+A private `isSuccess` flag is the discriminator. Only the success constructor sets it:
+- `IsSuccess` → success state (even if ResultValue is null); `Error` is null
+- `IsError` → failure state; `Error` is never null
+- `default(Result<T>)` → failure holding the shared `UninitializedResult.Error` (`InvalidOperationException`)
 
 This requires strict discipline when using the API. Never access ResultValue without checking IsSuccess first.
 
@@ -28,10 +29,10 @@ This requires strict discipline when using the API. Never access ResultValue wit
 
 - One public single-parameter constructor per case type: `Result(T)` and `Result(Exception)`. These give implicit union conversions, so `Result<int> r = 42;` and `Result<int> r = ex;` work. Do not add other public single-parameter constructors; each one adds a case type.
 - `Value` returns `object?`: the `Error`, or `ResultValue` boxed. It is null for a success holding null.
-- Non-boxing access pattern: `HasValue`, `TryGetValue(out T)`, `TryGetValue(out Exception)`. The compiler uses them for type and null patterns. They must agree with `Value`: `TryGetValue(out T)` is true only for a success holding non-null; `HasValue` is `Value is not null`.
-- `default(Result<T>)` is a success holding `default(T)`.
+- Non-boxing access pattern: `HasValue`, `TryGetValue(out T)`, `TryGetValue(out Exception)`. The compiler uses them for type and null patterns. They must agree with `Value`: `TryGetValue(out T)` is `Value is T`, true for a success holding non-null or a failure whose error is a `T`; `HasValue` is `Value is not null`. The compiler lowers a type pattern covered only by `T` (`is ArgumentException` on `Result<object>`) to `TryGetValue(out T)` plus a type test, so failures must bind there.
+- `default(Result<T>)` is a failure. An exhaustive switch over the case types needs no `null` arm for a non-nullable `T`. It still throws `SwitchExpressionException` on a success holding a null that bypassed nullability analysis (`null!`, oblivious APIs).
 - The `null` literal converts to the `Exception` case. `Result(Exception)` replaces null with `ArgumentNullException` so `result == null` and `Equals(null)` stay safe.
-- `Result<Exception>` has ambiguous implicit conversions (CS0457). `Result<object>` maps an `Exception` to the failure case.
+- `Result<Exception>` has ambiguous implicit conversions (CS0457). `Result(T)` routes a value that is an `Exception` at runtime to the failure case, so `Success<object>(ex)` is a failure.
 
 ### Fail-Fast Philosophy
 
@@ -70,7 +71,7 @@ Given the experimental nature, tests are integrated into CatcherExample.cs:
 These are NOT bugs:
 
 - **Exception equality by type+message**: Ignores stack trace and inner exceptions for testability
-- **Null as discriminator**: Simpler than Tagged Union; works with C# nullability
+- **Default is a failure**: `string` and `string?` share one runtime type, so a success holding null cannot be rejected. Making `default` a failure removes the one null-holding state that nullability analysis cannot see
 - **Custom union, not a `union` declaration**: A `union` declaration stores contents as `object?` and boxes value types. The custom struct keeps typed fields and the non-boxing access pattern
 - **Null exception becomes ArgumentNullException**: The `null` literal converts to the `Exception` case, so failing fast there would crash on `result == null`
 - **Fail-fast in Match/Transform**: Programming errors should crash
